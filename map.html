@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Property Search Map</title>
+  <!-- Include Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    /* Container for the search bar */
+    .search-container {
+      padding: 10px;
+      background: #f2f2f2;
+    }
+    .search-container input[type="text"] {
+      width: 300px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .search-container button {
+      padding: 8px 12px;
+      margin-left: 5px;
+      border: none;
+      border-radius: 4px;
+      background: #007BFF;
+      color: #fff;
+      cursor: pointer;
+    }
+    .search-container button:hover {
+      background: #0056b3;
+    }
+    /* Map container takes up most of the viewport */
+    #map {
+      width: 100%;
+      height: 80vh;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-container">
+    <input type="text" id="address" placeholder="Enter property address" />
+    <button id="searchBtn">Search Property</button>
+  </div>
+  <div id="map"></div>
+
+  <!-- Include Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Initialize the map centered roughly on the US
+    var map = L.map('map').setView([39.8283, -98.5795], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Function to add simulated nearby property markers
+    function addNearbyProperties(lat, lon) {
+      // Remove previous nearby markers if any
+      if (window.nearbyLayer) {
+        map.removeLayer(window.nearbyLayer);
+      }
+      window.nearbyLayer = L.layerGroup().addTo(map);
+      // Create a few markers with small random offsets
+      for (let i = 0; i < 5; i++) {
+        let offsetLat = (Math.random() - 0.5) / 100;
+        let offsetLon = (Math.random() - 0.5) / 100;
+        let marker = L.marker([lat + offsetLat, lon + offsetLon])
+          .bindPopup("Property " + (i + 1));
+        window.nearbyLayer.addLayer(marker);
+      }
+    }
+
+    // Event listener for the search button
+    document.getElementById('searchBtn').addEventListener('click', function() {
+      var address = document.getElementById('address').value;
+      if (!address) {
+        alert("Please enter an address.");
+        return;
+      }
+      // Call Nominatim API to geocode the address
+      fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address))
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            var lat = parseFloat(data[0].lat);
+            var lon = parseFloat(data[0].lon);
+            // Center the map on the searched property and add a marker
+            map.setView([lat, lon], 14);
+            if (window.searchMarker) {
+              map.removeLayer(window.searchMarker);
+            }
+            window.searchMarker = L.marker([lat, lon]).addTo(map)
+              .bindPopup("Searched Property").openPopup();
+            // Add simulated markers for nearby properties
+            addNearbyProperties(lat, lon);
+          } else {
+            alert("Address not found. Please try again.");
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert("Error retrieving address. Please try again later.");
+        });
+    });
+  </script>
+</body>
+</html>
