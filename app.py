@@ -260,7 +260,7 @@ def create_property_map(lat, lon, property_data=None):
                     position: mainLocation,
                     map: map,
                     icon: {{
-                        url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                        url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
                     }},
                     title: "Property Location"
                 }}) ;
@@ -282,7 +282,7 @@ def create_property_map(lat, lon, property_data=None):
                         position: {{ lat: property.lat, lng: property.lng }},
                         map: map,
                         icon: {{
-                            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
                         }},
                         title: `${{property.price}}`
                     }}) ;
