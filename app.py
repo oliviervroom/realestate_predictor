@@ -15,11 +15,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
-import folium
-from folium.plugins import MarkerCluster
-from streamlit_folium import folium_static
-from geopy.geocoders import Nominatim
 import json
 import random
 
@@ -121,7 +118,7 @@ def get_property_details(address):
     # Try to get API key from secrets, use placeholder if not available
     api_key = "YOUR_API_KEY_HERE"
     try:
-        if hasattr(st, 'secrets') and "RAPIDAPI_KEY" in st.secrets:
+        if hasattr(st, 'secrets')  and "RAPIDAPI_KEY" in st.secrets:
             api_key = st.secrets["RAPIDAPI_KEY"]
     except Exception as e:
         st.warning(f"Could not access API key: {str(e)}. Using synthetic data for demonstration.")
@@ -150,98 +147,174 @@ def get_property_details(address):
         st.warning(f"Error fetching property details: {str(e)}. Using synthetic data for demonstration.")
         return generate_synthetic_property_data(address)
 
-# Function to get property coordinates
+# Function to get property coordinates using Google Maps API
 def get_coordinates(address):
     """
-    Get latitude and longitude for an address using geopy
+    Get latitude and longitude for an address using Google Geocoding API
     """
     try:
-        geolocator = Nominatim(user_agent="rental_predictor")
-        location = geolocator.geocode(address)
-        if location:
-            return location.latitude, location.longitude
-        else:
-            # If geocoding fails, return random coordinates near Boston for demo
-            st.info("Could not determine exact coordinates. Using approximate location for demonstration.")
+        # Get API key from secrets
+        api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
+        if not api_key:
+            st.warning("Google Maps API key not found in secrets. Using approximate location.")
             return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
+        
+        # Make request to Google Geocoding API
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}"
+        response = requests.get(url) 
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data["status"] == "OK" and data["results"]:
+                location = data["results"][0]["geometry"]["location"]
+                return location["lat"], location["lng"]
+        
+        # If we get here, geocoding failed
+        st.info("Could not determine exact coordinates. Using approximate location for demonstration.")
+        return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
     except Exception as e:
         st.warning(f"Error getting coordinates: {str(e)}. Using approximate location for demonstration.")
         return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
 
-# Function to create a map with the property location
+# Function to create a Google Map centered on the property location
 def create_property_map(lat, lon, property_data=None):
     """
-    Create a folium map centered on the property location
+    Create a Google Map centered on the property location
     """
     if lat is None or lon is None:
         return None
     
-    # Create a map centered at the property location
-    m = folium.Map(location=[lat, lon], zoom_start=15)
+    # Get API key from secrets
+    api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
+    if not api_key:
+        st.warning("Google Maps API key not found in secrets. Map cannot be displayed.")
+        return None
     
-    # Add a marker for the property
-    popup_text = "Property Location"
+    # Create property info for the popup
+    property_info = ""
     if property_data:
         price = property_data.get("price", "N/A")
         bedrooms = property_data.get("bedrooms", "N/A")
         bathrooms = property_data.get("bathrooms", "N/A")
         sqft = property_data.get("livingArea", "N/A")
         
-        popup_text = f"""
-        <b>Price:</b> ${price}<br>
-        <b>Bedrooms:</b> {bedrooms}<br>
-        <b>Bathrooms:</b> {bathrooms}<br>
-        <b>Square Feet:</b> {sqft}
+        property_info = f"""
+            <div>
+                <h3>Property Details</h3>
+                <p><b>Price:</b> ${price}</p>
+                <p><b>Bedrooms:</b> {bedrooms}</p>
+                <p><b>Bathrooms:</b> {bathrooms}</p>
+                <p><b>Square Feet:</b> {sqft}</p>
+            </div>
         """
     
-    folium.Marker(
-        [lat, lon],
-        popup=folium.Popup(popup_text, max_width=300),
-        icon=folium.Icon(color="red", icon="home")
-    ).add_to(m)
-    
-    # Add nearby properties (simulated)
-    add_nearby_properties(m, lat, lon)
-    
-    return m
-
-# Function to add simulated nearby properties to the map
-def add_nearby_properties(m, center_lat, center_lon):
-    """
-    Add simulated nearby properties to the map
-    """
-    # Create a marker cluster for nearby properties
-    marker_cluster = MarkerCluster().add_to(m)
-    
-    # Generate 10-15 random nearby properties
-    num_properties = random.randint(10, 15)
-    
-    for _ in range(num_properties):
-        # Generate random coordinates within ~1 mile
+    # Generate nearby properties (for demonstration)
+    nearby_properties = []
+    for _ in range(random.randint(5, 10)):
         lat_offset = random.uniform(-0.01, 0.01)
         lon_offset = random.uniform(-0.01, 0.01)
+        nearby_lat = lat + lat_offset
+        nearby_lon = lon + lon_offset
         
-        lat = center_lat + lat_offset
-        lon = center_lon + lon_offset
-        
-        # Generate random property details
+        # Random property details
         bedrooms = random.randint(1, 5)
         bathrooms = random.randint(1, 4)
         sqft = random.randint(800, 3500)
         price = int(1500 + (bedrooms * 300) + (bathrooms * 200) + (sqft * 0.5))
         
-        popup_text = f"""
-        <b>Price:</b> ${price}<br>
-        <b>Bedrooms:</b> {bedrooms}<br>
-        <b>Bathrooms:</b> {bathrooms}<br>
-        <b>Square Feet:</b> {sqft}
-        """
-        
-        folium.Marker(
-            [lat, lon],
-            popup=folium.Popup(popup_text, max_width=300),
-            icon=folium.Icon(color="blue", icon="home")
-        ).add_to(marker_cluster)
+        nearby_properties.append({
+            "lat": nearby_lat,
+            "lng": nearby_lon,
+            "price": price,
+            "bedrooms": bedrooms,
+            "bathrooms": bathrooms,
+            "sqft": sqft
+        })
+    
+    # Create a Google Maps HTML with markers
+    map_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Property Map</title>
+        <script src="https://maps.googleapis.com/maps/api/js?key={api_key}&callback=initMap" async defer></script>
+        <style>
+            #map {{
+                height: 400px;
+                width: 100%;
+            }}
+            .property-info {{
+                max-width: 200px;
+            }}
+        </style>
+        <script>
+            function initMap()  {{
+                const mainLocation = {{ lat: {lat}, lng: {lon} }};
+                const map = new google.maps.Map(document.getElementById("map"), {{
+                    zoom: 14,
+                    center: mainLocation,
+                }});
+                
+                // Main property marker
+                const mainMarker = new google.maps.Marker({{
+                    position: mainLocation,
+                    map: map,
+                    icon: {{
+                        url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                    }},
+                    title: "Property Location"
+                }}) ;
+                
+                // Info window for main property
+                const mainInfoWindow = new google.maps.InfoWindow({{
+                    content: `{property_info}`
+                }});
+                
+                mainMarker.addListener("click", () => {{
+                    mainInfoWindow.open(map, mainMarker);
+                }});
+                
+                // Add nearby properties
+                const nearbyProperties = {json.dumps(nearby_properties)};
+                
+                nearbyProperties.forEach(property => {{
+                    const marker = new google.maps.Marker({{
+                        position: {{ lat: property.lat, lng: property.lng }},
+                        map: map,
+                        icon: {{
+                            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                        }},
+                        title: `${{property.price}}`
+                    }}) ;
+                    
+                    const infoWindow = new google.maps.InfoWindow({{
+                        content: `
+                            <div class="property-info">
+                                <p><b>Price:</b> ${{property.price}}</p>
+                                <p><b>Bedrooms:</b> ${{property.bedrooms}}</p>
+                                <p><b>Bathrooms:</b> ${{property.bathrooms}}</p>
+                                <p><b>Square Feet:</b> ${{property.sqft}}</p>
+                            </div>
+                        `
+                    }});
+                    
+                    marker.addListener("click", () => {{
+                        infoWindow.open(map, marker);
+                    }});
+                }});
+            }}
+        </script>
+    </head>
+    <body>
+        <div id="map"></div>
+    </body>
+    </html>
+    """
+    
+    # Display the map using streamlit components
+    components.html(map_html, height=400)
+    
+    return True
 
 # Main function
 def main():
@@ -332,8 +405,7 @@ def main():
                         
                         if lat and lon:
                             st.subheader("Property Location")
-                            property_map = create_property_map(lat, lon, property_data)
-                            folium_static(property_map)
+                            create_property_map(lat, lon, property_data)
                         else:
                             st.warning("Could not determine property location for map display.")
                 else:
