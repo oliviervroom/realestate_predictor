@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 import streamlit as st
-import streamlit.components.v1 as components
 import requests
 import json
 import random
@@ -118,7 +117,7 @@ def get_property_details(address):
     # Try to get API key from secrets, use placeholder if not available
     api_key = "YOUR_API_KEY_HERE"
     try:
-        if hasattr(st, 'secrets')  and "RAPIDAPI_KEY" in st.secrets:
+        if hasattr(st, 'secrets') and "RAPIDAPI_KEY" in st.secrets:
             api_key = st.secrets["RAPIDAPI_KEY"]
     except Exception as e:
         st.warning(f"Could not access API key: {str(e)}. Using synthetic data for demonstration.")
@@ -147,184 +146,83 @@ def get_property_details(address):
         st.warning(f"Error fetching property details: {str(e)}. Using synthetic data for demonstration.")
         return generate_synthetic_property_data(address)
 
-# Function to get property coordinates using Google Maps API
+# Function to get property coordinates
 def get_coordinates(address):
     """
-    Get latitude and longitude for an address using Google Geocoding API
+    Get latitude and longitude for an address using Google Geocoding API or fallback
     """
     try:
         # Get API key from secrets
         api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
-        if not api_key:
-            st.warning("Google Maps API key not found in secrets. Using approximate location.")
-            return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
         
-        # Make request to Google Geocoding API
-        url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}"
-        response = requests.get(url) 
+        if api_key:
+            # Make request to Google Geocoding API
+            url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}"
+            response = requests.get(url)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data["status"] == "OK" and data["results"]:
+                    location = data["results"][0]["geometry"]["location"]
+                    return location["lat"], location["lng"]
         
-        if response.status_code == 200:
-            data = response.json()
-            if data["status"] == "OK" and data["results"]:
-                location = data["results"][0]["geometry"]["location"]
-                return location["lat"], location["lng"]
-        
-        # If we get here, geocoding failed
-        st.info("Could not determine exact coordinates. Using approximate location for demonstration.")
+        # If we get here, either no API key or geocoding failed
+        # Use a simple approximation for demonstration
+        st.info("Using approximate location for demonstration purposes.")
         return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
     except Exception as e:
         st.warning(f"Error getting coordinates: {str(e)}. Using approximate location for demonstration.")
         return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
 
-# Function to create a Google Map centered on the property location
+# Function to create a map using Streamlit's built-in map function
 def create_property_map(lat, lon, property_data=None):
     """
-    Create a Google Map centered on the property location
+    Create a map using Streamlit's built-in map function
     """
     if lat is None or lon is None:
         return None
     
-    # Get API key from secrets
-    api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
-    if not api_key:
-        st.warning("Google Maps API key not found in secrets. Map cannot be displayed.")
-        return None
+    # Create a DataFrame for the main property
+    main_property_df = pd.DataFrame({
+        'lat': [lat],
+        'lon': [lon],
+        'size': [300]  # Larger size for the main property
+    })
     
-    # Create property info for the popup
-    property_info = ""
-    if property_data:
-        price = property_data.get("price", "N/A")
-        bedrooms = property_data.get("bedrooms", "N/A")
-        bathrooms = property_data.get("bathrooms", "N/A")
-        sqft = property_data.get("livingArea", "N/A")
-        
-        property_info = f"""
-            <div>
-                <h3>Property Details</h3>
-                <p><b>Price:</b> ${price}</p>
-                <p><b>Bedrooms:</b> {bedrooms}</p>
-                <p><b>Bathrooms:</b> {bathrooms}</p>
-                <p><b>Square Feet:</b> {sqft}</p>
-            </div>
-        """
-    
-    # Generate nearby properties (for demonstration)
+    # Generate nearby properties for demonstration
     nearby_properties = []
     for _ in range(random.randint(5, 10)):
         lat_offset = random.uniform(-0.01, 0.01)
         lon_offset = random.uniform(-0.01, 0.01)
         nearby_lat = lat + lat_offset
         nearby_lon = lon + lon_offset
-        
-        # Random property details
-        bedrooms = random.randint(1, 5)
-        bathrooms = random.randint(1, 4)
-        sqft = random.randint(800, 3500)
-        price = int(1500 + (bedrooms * 300) + (bathrooms * 200) + (sqft * 0.5))
-        
-        nearby_properties.append({
-            "lat": nearby_lat,
-            "lng": nearby_lon,
-            "price": price,
-            "bedrooms": bedrooms,
-            "bathrooms": bathrooms,
-            "sqft": sqft
-        })
+        nearby_properties.append([nearby_lat, nearby_lon])
     
-    # Create a Google Maps HTML with markers
-    map_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Property Map</title>
-        <script>
-            function handleMapError()  {{
-                document.getElementById('map').innerHTML = '<div style="text-align:center;padding:20px;"><p>Error loading Google Maps. Please check your API key and network connection.</p></div>';
-                console.error('Google Maps failed to load');
-            }}
-        </script>
-        <script src="https://maps.googleapis.com/maps/api/js?key={api_key}&callback=initMap" async defer onerror="handleMapError() "></script>
-        <style>
-            #map {{
-                height: 400px;
-                width: 100%;
-            }}
-            .property-info {{
-                max-width: 200px;
-            }}
-        </style>
-        <script>
-            function initMap() {{
-                try {{
-                    const mainLocation = {{ lat: {lat}, lng: {lon} }};
-                    const map = new google.maps.Map(document.getElementById("map"), {{
-                        zoom: 14,
-                        center: mainLocation,
-                    }});
-                    
-                    // Main property marker
-                    const mainMarker = new google.maps.Marker({{
-                        position: mainLocation,
-                        map: map,
-                        icon: {{
-                            url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                        }},
-                        title: "Property Location"
-                    }}) ;
-                    
-                    // Info window for main property
-                    const mainInfoWindow = new google.maps.InfoWindow({{
-                        content: `{property_info}`
-                    }});
-                    
-                    mainMarker.addListener("click", () => {{
-                        mainInfoWindow.open(map, mainMarker);
-                    }});
-                    
-                    // Add nearby properties
-                    const nearbyProperties = {json.dumps(nearby_properties)};
-                    
-                    nearbyProperties.forEach(property => {{
-                        const marker = new google.maps.Marker({{
-                            position: {{ lat: property.lat, lng: property.lng }},
-                            map: map,
-                            icon: {{
-                                url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                            }},
-                            title: `${{property.price}}`
-                        }}) ;
-                        
-                        const infoWindow = new google.maps.InfoWindow({{
-                            content: `
-                                <div class="property-info">
-                                    <p><b>Price:</b> ${{property.price}}</p>
-                                    <p><b>Bedrooms:</b> ${{property.bedrooms}}</p>
-                                    <p><b>Bathrooms:</b> ${{property.bathrooms}}</p>
-                                    <p><b>Square Feet:</b> ${{property.sqft}}</p>
-                                </div>
-                            `
-                        }});
-                        
-                        marker.addListener("click", () => {{
-                            infoWindow.open(map, marker);
-                        }});
-                    }});
-                }} catch (error) {{
-                    console.error('Error initializing map:', error);
-                    document.getElementById('map').innerHTML = '<div style="text-align:center;padding:20px;"><p>Error initializing map: ' + error.message + '</p></div>';
-                }}
-            }}
-        </script>
-    </head>
-    <body>
-        <div id="map"><div style="text-align:center;padding:20px;"><p>Loading map...</p></div></div>
-    </body>
-    </html>
-    """
-
+    # Create DataFrame for nearby properties
+    if nearby_properties:
+        nearby_df = pd.DataFrame(
+            nearby_properties,
+            columns=['lat', 'lon']
+        )
+        nearby_df['size'] = 100  # Smaller size for nearby properties
+        
+        # Combine main property with nearby properties
+        map_df = pd.concat([main_property_df, nearby_df], ignore_index=True)
+    else:
+        map_df = main_property_df
     
-    # Display the map using streamlit components
-    components.html(map_html, height=400)
+    # Display the map
+    st.map(map_df, size='size')
+    
+    # Add a caption
+    if property_data:
+        price = property_data.get("price", "N/A")
+        bedrooms = property_data.get("bedrooms", "N/A")
+        bathrooms = property_data.get("bathrooms", "N/A")
+        sqft = property_data.get("livingArea", "N/A")
+        
+        st.caption(f"Main property (larger dot): ${price}, {bedrooms} bed, {bathrooms} bath, {sqft} sqft")
+        st.caption("Smaller dots represent nearby properties")
     
     return True
 
