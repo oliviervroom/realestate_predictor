@@ -237,7 +237,13 @@ def create_property_map(lat, lon, property_data=None):
     <html>
     <head>
         <title>Property Map</title>
-        <script src="https://maps.googleapis.com/maps/api/js?key={api_key}&callback=initMap" async defer></script>
+        <script>
+            function handleMapError()  {{
+                document.getElementById('map').innerHTML = '<div style="text-align:center;padding:20px;"><p>Error loading Google Maps. Please check your API key and network connection.</p></div>';
+                console.error('Google Maps failed to load');
+            }}
+        </script>
+        <script src="https://maps.googleapis.com/maps/api/js?key={api_key}&callback=initMap" async defer onerror="handleMapError() "></script>
         <style>
             #map {{
                 height: 400px;
@@ -248,68 +254,74 @@ def create_property_map(lat, lon, property_data=None):
             }}
         </style>
         <script>
-            function initMap()  {{
-                const mainLocation = {{ lat: {lat}, lng: {lon} }};
-                const map = new google.maps.Map(document.getElementById("map"), {{
-                    zoom: 14,
-                    center: mainLocation,
-                }});
-                
-                // Main property marker
-                const mainMarker = new google.maps.Marker({{
-                    position: mainLocation,
-                    map: map,
-                    icon: {{
-                        url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                    }},
-                    title: "Property Location"
-                }}) ;
-                
-                // Info window for main property
-                const mainInfoWindow = new google.maps.InfoWindow({{
-                    content: `{property_info}`
-                }});
-                
-                mainMarker.addListener("click", () => {{
-                    mainInfoWindow.open(map, mainMarker);
-                }});
-                
-                // Add nearby properties
-                const nearbyProperties = {json.dumps(nearby_properties)};
-                
-                nearbyProperties.forEach(property => {{
-                    const marker = new google.maps.Marker({{
-                        position: {{ lat: property.lat, lng: property.lng }},
+            function initMap() {{
+                try {{
+                    const mainLocation = {{ lat: {lat}, lng: {lon} }};
+                    const map = new google.maps.Map(document.getElementById("map"), {{
+                        zoom: 14,
+                        center: mainLocation,
+                    }});
+                    
+                    // Main property marker
+                    const mainMarker = new google.maps.Marker({{
+                        position: mainLocation,
                         map: map,
                         icon: {{
-                            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png"
                         }},
-                        title: `${{property.price}}`
+                        title: "Property Location"
                     }}) ;
                     
-                    const infoWindow = new google.maps.InfoWindow({{
-                        content: `
-                            <div class="property-info">
-                                <p><b>Price:</b> ${{property.price}}</p>
-                                <p><b>Bedrooms:</b> ${{property.bedrooms}}</p>
-                                <p><b>Bathrooms:</b> ${{property.bathrooms}}</p>
-                                <p><b>Square Feet:</b> ${{property.sqft}}</p>
-                            </div>
-                        `
+                    // Info window for main property
+                    const mainInfoWindow = new google.maps.InfoWindow({{
+                        content: `{property_info}`
                     }});
                     
-                    marker.addListener("click", () => {{
-                        infoWindow.open(map, marker);
+                    mainMarker.addListener("click", () => {{
+                        mainInfoWindow.open(map, mainMarker);
                     }});
-                }});
+                    
+                    // Add nearby properties
+                    const nearbyProperties = {json.dumps(nearby_properties)};
+                    
+                    nearbyProperties.forEach(property => {{
+                        const marker = new google.maps.Marker({{
+                            position: {{ lat: property.lat, lng: property.lng }},
+                            map: map,
+                            icon: {{
+                                url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                            }},
+                            title: `${{property.price}}`
+                        }}) ;
+                        
+                        const infoWindow = new google.maps.InfoWindow({{
+                            content: `
+                                <div class="property-info">
+                                    <p><b>Price:</b> ${{property.price}}</p>
+                                    <p><b>Bedrooms:</b> ${{property.bedrooms}}</p>
+                                    <p><b>Bathrooms:</b> ${{property.bathrooms}}</p>
+                                    <p><b>Square Feet:</b> ${{property.sqft}}</p>
+                                </div>
+                            `
+                        }});
+                        
+                        marker.addListener("click", () => {{
+                            infoWindow.open(map, marker);
+                        }});
+                    }});
+                }} catch (error) {{
+                    console.error('Error initializing map:', error);
+                    document.getElementById('map').innerHTML = '<div style="text-align:center;padding:20px;"><p>Error initializing map: ' + error.message + '</p></div>';
+                }}
             }}
         </script>
     </head>
     <body>
-        <div id="map"></div>
+        <div id="map"><div style="text-align:center;padding:20px;"><p>Loading map...</p></div></div>
     </body>
     </html>
     """
+
     
     # Display the map using streamlit components
     components.html(map_html, height=400)
