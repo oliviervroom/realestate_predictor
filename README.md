@@ -1,6 +1,10 @@
 # Rental Income Prediction Application
 
 ## Overview
+This is the public repo version of our project.
+
+
+
 This application provides a user interface for real estate investors to:
 1. Input property characteristics and see predicted rental income
 2. Adjust rental prices and compare with predictions
