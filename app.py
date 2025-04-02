@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-Rental Income Prediction Web Application with Success Probability
+Rental Income Prediction Web Application
 
 This application provides a user interface for real estate investors to:
-1. Search for properties by address
-2. View property details fetched from API (with fallback to synthetic data)
-3. See predicted rental income based on property features
-4. View rental success probability at different price points
-5. View comparable properties and their features
-6. View property location on an interactive map
+1. Input property characteristics and see predicted rental income
+2. Adjust rental prices and compare with predictions
+3. View explanations of which features most influenced the prediction
 """
+
 import os
 import pickle
 import pandas as pd
@@ -17,23 +15,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import shap
 import streamlit as st
-import requests
-from scipy.stats import gaussian_kde
-import folium
-from streamlit_folium import folium_static
-from geopy.geocoders import Nominatim
-import json
-import random
-
-# Try to import CatBoost, with fallback to RandomForest
-try:
-    from catboost import CatBoostRegressor
-    CATBOOST_AVAILABLE = True
-except ImportError:
-    from sklearn.ensemble import RandomForestRegressor
-    CATBOOST_AVAILABLE = False
-    st.warning("CatBoost not available. Using RandomForest as fallback. Consider installing CatBoost for better performance.")
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, RobustScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 
 # Define directories
 MODEL_DIR = './models'
@@ -43,114 +31,76 @@ TEMP_DIR = './temp'
 # Create temp directory if it doesn't exist
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-# Function to load the rental and sold data
-@st.cache_data
-def load_data():
-    """
-    Load the rental and sold data
-    """
-    rental_data_path = os.path.join(DATA_DIR, 'rental 04_02_2024-07_01_2024.csv')
-    sold_data_path = os.path.join(DATA_DIR, 'sold 01_01_2025-3_11_2025.csv')
-    
-    rental_df = pd.read_csv(rental_data_path) if os.path.exists(rental_data_path) else pd.DataFrame()
-    sold_df = pd.read_csv(sold_data_path) if os.path.exists(sold_data_path) else pd.DataFrame()
-    
-    return rental_df, sold_df
-
-# Function to load or create the model
+# Function to load the trained model
 @st.cache_resource
-def load_or_create_model():
+def load_model():
     """
-    Load the trained rental price prediction model or create a new one
+    Load the trained rental price prediction model
     """
     model_path = os.path.join(MODEL_DIR, 'rental_price_model.pkl')
     
     # Check if model exists
     if not os.path.exists(model_path):
-        # If model doesn't exist, create a new one
-        st.info("Model not found, creating a new model for demonstration")
+        # If model doesn't exist, create a simple model for demonstration
+        print("Model not found, creating a simple model for demonstration")
         
-        # Load the data
-        rental_df, _ = load_data()
-        
-        if not rental_df.empty:
+        # Load the feature-engineered data
+        data_path = os.path.join(DATA_DIR, 'feature_engineered_data.csv')
+        if os.path.exists(data_path):
+            df = pd.read_csv(data_path)
+            
             # Prepare data for modeling
-            if 'LIST_PRICE' in rental_df.columns:
-                # Use actual data
-                X = rental_df.drop(columns=['LIST_PRICE'])
-                y = rental_df['LIST_PRICE']
-                
-                # Identify numeric and categorical columns
-                numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
-                categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
-                
-                # Create and train the model
-                if CATBOOST_AVAILABLE:
-                    # Use CatBoost if available
-                    model = CatBoostRegressor(
-                        iterations=500,
-                        learning_rate=0.05,
-                        depth=6,
-                        loss_function='RMSE',
-                        random_seed=42,
-                        verbose=False
-                    )
-                    # CatBoost handles categorical features automatically
-                    cat_features = categorical_cols
-                    model.fit(X, y, cat_features=cat_features)
-                else:
-                    # Fallback to RandomForest
-                    from sklearn.compose import ColumnTransformer
-                    from sklearn.pipeline import Pipeline
-                    from sklearn.preprocessing import OneHotEncoder, RobustScaler
-                    from sklearn.impute import SimpleImputer
-                    
-                    # Create preprocessing pipeline
-                    numeric_transformer = Pipeline(steps=[
-                        ('imputer', SimpleImputer(strategy='median')),
-                        ('scaler', RobustScaler())
-                    ])
-                    
-                    categorical_transformer = Pipeline(steps=[
-                        ('imputer', SimpleImputer(strategy='most_frequent')),
-                        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-                    ])
-                    
-                    preprocessor = ColumnTransformer(
-                        transformers=[
-                            ('num', numeric_transformer, numeric_cols),
-                            ('cat', categorical_transformer, categorical_cols)
-                        ]
-                    )
-                    
-                    model = Pipeline(steps=[
-                        ('preprocessor', preprocessor),
-                        ('model', RandomForestRegressor(n_estimators=100, max_depth=15, random_state=42))
-                    ])
-                    
-                    model.fit(X, y)
-                
-                # Save the model
-                os.makedirs(MODEL_DIR, exist_ok=True)
-                with open(model_path, 'wb') as f:
-                    pickle.dump(model, f)
-                
-                return model, X.columns.tolist(), numeric_cols, categorical_cols
-            else:
-                # Create synthetic model
-                return create_synthetic_model()
+            X = df.drop(columns=['LIST_PRICE'])
+            y = df['LIST_PRICE']
+            
+            # Identify numeric and categorical columns
+            numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
+            categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
+            
+            # Create preprocessing pipeline
+            numeric_transformer = Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='median')),
+                ('scaler', RobustScaler())
+            ])
+            
+            categorical_transformer = Pipeline(steps=[
+                ('imputer', SimpleImputer(strategy='most_frequent')),
+                ('onehot', OneHotEncoder(handle_unknown='ignore'))
+            ])
+            
+            preprocessor = ColumnTransformer(
+                transformers=[
+                    ('num', numeric_transformer, numeric_cols),
+                    ('cat', categorical_transformer, categorical_cols)
+                ])
+            
+            # Create and train a simple model
+            model = Pipeline(steps=[
+                ('preprocessor', preprocessor),
+                ('model', RandomForestRegressor(n_estimators=100, max_depth=15, random_state=42))
+            ])
+            
+            model.fit(X, y)
+            
+            # Save the model
+            os.makedirs(MODEL_DIR, exist_ok=True)
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
+            
+            return model, X.columns.tolist(), numeric_cols, categorical_cols
         else:
-            # Create synthetic model
-            return create_synthetic_model()
+            st.error("Error: Model and training data not found. Please train the model first.")
+            return None, None, None, None
     else:
         # Load the existing model
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
         
         # Load feature information
-        rental_df, _ = load_data()
-        if not rental_df.empty and 'LIST_PRICE' in rental_df.columns:
-            X = rental_df.drop(columns=['LIST_PRICE'])
+        data_path = os.path.join(DATA_DIR, 'feature_engineered_data.csv')
+        if os.path.exists(data_path):
+            df = pd.read_csv(data_path)
+            X = df.drop(columns=['LIST_PRICE'])
             feature_names = X.columns.tolist()
             numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
             categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
@@ -161,619 +111,425 @@ def load_or_create_model():
         
         return model, feature_names, numeric_cols, categorical_cols
 
-# Function to create a synthetic model when no data is available
-def create_synthetic_model():
+# Function to get feature importance and explanations
+def get_feature_importance(model, feature_names):
     """
-    Create a synthetic model for demonstration purposes
+    Get feature importance from the model
     """
-    # Define synthetic feature names
-    feature_names = [
-        'ZIP_CODE', 'PROP_TYPE', 'SQUARE_FEET', 'NO_BEDROOMS', 'NO_BATHROOMS',
-        'YEAR_BUILT', 'HAS_PARKING', 'HAS_POOL', 'DISTANCE_TO_CITY_CENTER'
-    ]
+    # Check if model is a pipeline with a tree-based model
+    if hasattr(model, 'named_steps') and 'model' in model.named_steps:
+        model_step = model.named_steps['model']
+        
+        # Check if the model has feature_importances_ attribute
+        if hasattr(model_step, 'feature_importances_'):
+            # Get feature names after preprocessing
+            if hasattr(model, 'named_steps') and 'preprocessor' in model.named_steps:
+                preprocessor = model.named_steps['preprocessor']
+                if hasattr(preprocessor, 'get_feature_names_out'):
+                    try:
+                        feature_names_out = preprocessor.get_feature_names_out()
+                        importances = model_step.feature_importances_
+                        
+                        # Ensure lengths match
+                        if len(importances) == len(feature_names_out):
+                            # Create a DataFrame with feature names and importances
+                            feature_importance = pd.DataFrame({
+                                'Feature': feature_names_out,
+                                'Importance': importances
+                            })
+                            feature_importance = feature_importance.sort_values('Importance', ascending=False)
+                            return feature_importance
+                    except:
+                        pass
+            
+            # Fallback: use original feature names
+            importances = model_step.feature_importances_
+            
+            # Create a DataFrame with feature names and importances
+            feature_importance = pd.DataFrame({
+                'Feature': feature_names,
+                'Importance': importances[:len(feature_names)] if len(importances) > len(feature_names) else importances
+            })
+            feature_importance = feature_importance.sort_values('Importance', ascending=False)
+            return feature_importance
     
-    numeric_cols = ['SQUARE_FEET', 'NO_BEDROOMS', 'NO_BATHROOMS', 'YEAR_BUILT', 'DISTANCE_TO_CITY_CENTER']
-    categorical_cols = ['ZIP_CODE', 'PROP_TYPE', 'HAS_PARKING', 'HAS_POOL']
+    # Fallback: return empty DataFrame
+    return pd.DataFrame(columns=['Feature', 'Importance'])
+
+# Function to generate SHAP explanations
+def generate_shap_explanations(model, X_sample):
+    """
+    Generate SHAP explanations for a prediction
+    """
+    try:
+        # Check if model is a pipeline with a tree-based model
+        if hasattr(model, 'named_steps') and 'model' in model.named_steps:
+            model_step = model.named_steps['model']
+            
+            # Preprocess the data
+            if hasattr(model, 'named_steps') and 'preprocessor' in model.named_steps:
+                preprocessor = model.named_steps['preprocessor']
+                X_processed = preprocessor.transform(X_sample)
+                
+                # Create explainer
+                explainer = shap.TreeExplainer(model_step)
+                
+                # Calculate SHAP values
+                shap_values = explainer.shap_values(X_processed)
+                
+                # Get feature names after preprocessing
+                if hasattr(preprocessor, 'get_feature_names_out'):
+                    try:
+                        feature_names_out = preprocessor.get_feature_names_out()
+                        
+                        # Create a DataFrame with feature names and SHAP values
+                        shap_df = pd.DataFrame({
+                            'Feature': feature_names_out,
+                            'SHAP Value': shap_values[0]
+                        })
+                        shap_df = shap_df.sort_values('SHAP Value', key=abs, ascending=False)
+                        return shap_df
+                    except:
+                        pass
+        
+        # Fallback: return empty DataFrame
+        return pd.DataFrame(columns=['Feature', 'SHAP Value'])
+    except:
+        # Fallback: return empty DataFrame
+        return pd.DataFrame(columns=['Feature', 'SHAP Value'])
+
+# Function to create a sample input for prediction
+def create_sample_input(feature_names, numeric_cols, categorical_cols):
+    """
+    Create a sample input for prediction based on user inputs
+    """
+    # Create a dictionary to store user inputs
+    input_data = {}
     
-    # Create a simple synthetic model
-    class SyntheticModel:
-        def predict(self, X):
-            # Simple formula based on square footage and bedrooms
-            if isinstance(X, pd.DataFrame):
-                base_price = 1000  # Base price
+    # Add key features with user inputs
+    if 'NO_BEDROOMS' in feature_names:
+        input_data['NO_BEDROOMS'] = st.sidebar.slider('Number of Bedrooms', 0, 5, 2)
+    
+    if 'SQUARE_FEET' in feature_names:
+        input_data['SQUARE_FEET'] = st.sidebar.slider('Square Footage', 300, 3000, 1000)
+    
+    # Add location features
+    location_features = [col for col in feature_names if any(term in col.lower() for term in ['town', 'neighborhood', 'zip'])]
+    if location_features:
+        location_feature = location_features[0]
+        location_options = ['Boston', 'Cambridge', 'Somerville', 'Brookline', 'Newton', 'Waltham', 'Quincy']
+        selected_location = st.sidebar.selectbox('Location', location_options)
+        input_data[location_feature] = selected_location
+    
+    # Add property type features
+    property_type_features = [col for col in feature_names if 'property_size_category' in col.lower()]
+    if property_type_features:
+        property_type_feature = property_type_features[0]
+        property_type_options = ['small', 'medium', 'large', 'very_large']
+        selected_property_type = st.sidebar.selectbox('Property Size Category', property_type_options)
+        input_data[property_type_feature] = selected_property_type
+    
+    # Add seasonal features
+    seasonal_features = [col for col in feature_names if 'season' in col.lower()]
+    if seasonal_features:
+        season_feature = seasonal_features[0]
+        season_options = ['winter', 'spring', 'summer', 'fall']
+        selected_season = st.sidebar.selectbox('Season', season_options)
+        input_data[season_feature] = selected_season
+    
+    # Add month features
+    month_features = [col for col in feature_names if 'list_month' in col.lower()]
+    if month_features:
+        month_feature = month_features[0]
+        month_options = list(range(1, 13))
+        selected_month = st.sidebar.selectbox('Month', month_options)
+        input_data[month_feature] = selected_month
+    
+    # Add bedroom category features
+    bedroom_category_features = [col for col in feature_names if 'bedroom_category' in col.lower()]
+    if bedroom_category_features:
+        bedroom_category_feature = bedroom_category_features[0]
+        bedroom_category_options = ['studio', 'one_bedroom', 'two_bedroom', 'three_bedroom', 'four_plus_bedroom']
+        selected_bedroom_category = st.sidebar.selectbox('Bedroom Category', bedroom_category_options)
+        input_data[bedroom_category_feature] = selected_bedroom_category
+    
+    # Add additional features
+    st.sidebar.markdown("### Additional Features")
+    show_advanced = st.sidebar.checkbox("Show Advanced Features")
+    
+    if show_advanced:
+        # Add more numeric features
+        for col in numeric_cols[:5]:  # Limit to first 5 numeric features
+            if col not in input_data and col != 'LIST_PRICE':
+                # Determine reasonable min/max values
+                min_val = 0
+                max_val = 100
+                default_val = 50
                 
-                # Add square footage contribution
-                if 'SQUARE_FEET' in X.columns:
-                    price = base_price + X['SQUARE_FEET'] * 1.5
-                else:
-                    price = base_price + 1000  # Default square footage contribution
-                
-                # Add bedroom contribution
-                if 'NO_BEDROOMS' in X.columns:
-                    price += X['NO_BEDROOMS'] * 200
-                
-                # Add bathroom contribution
-                if 'NO_BATHROOMS' in X.columns:
-                    price += X['NO_BATHROOMS'] * 150
-                
-                # Add location premium
-                if 'ZIP_CODE' in X.columns:
-                    # Random location factor based on ZIP code
-                    zip_factors = {
-                        '02108': 1.5, '02109': 1.4, '02110': 1.3, '02111': 1.2,
-                        '02113': 1.1, '02114': 1.0, '02115': 0.9, '02116': 1.3,
-                        '02118': 1.1, '02119': 0.8, '02120': 0.7, '02121': 0.6,
-                        '02122': 0.7, '02124': 0.6, '02125': 0.7, '02126': 0.6,
-                        '02127': 0.9, '02128': 0.8, '02129': 1.0, '02130': 0.9,
-                        '02131': 0.8, '02132': 0.7, '02134': 0.9, '02135': 0.8,
-                        '02136': 0.7, '02210': 1.4, '02215': 1.0
-                    }
+                if 'price' in col.lower():
+                    min_val = 500
+                    max_val = 5000
+                    default_val = 2000
+                elif 'sqft' in col.lower() or 'square' in col.lower():
+                    min_val = 300
+                    max_val = 3000
+                    default_val = 1000
+                elif 'bed' in col.lower() or 'room' in col.lower():
+                    min_val = 0
+                    max_val = 5
+                    default_val = 2
+                elif 'bath' in col.lower():
+                    min_val = 1
+                    max_val = 4
+                    default_val = 1
+                elif 'density' in col.lower() or 'ratio' in col.lower():
+                    min_val = 0.0
+                    max_val = 1.0
+                    default_val = 0.5
                     
-                    # Apply location factor if ZIP code is in our dictionary
-                    location_factors = X['ZIP_CODE'].map(lambda x: zip_factors.get(str(x), 1.0))
-                    price = price * location_factors
+                input_data[col] = st.sidebar.slider(col, min_val, max_val, default_val)
+        
+        # Add more categorical features
+        for col in categorical_cols[:3]:  # Limit to first 3 categorical features
+            if col not in input_data:
+                # Provide some default options
+                options = ['Option 1', 'Option 2', 'Option 3']
                 
-                # Add random variation (±10%)
-                price = price * (0.9 + 0.2 * np.random.random(len(X)))
+                if 'town' in col.lower() or 'city' in col.lower() or 'location' in col.lower():
+                    options = ['Boston', 'Cambridge', 'Somerville', 'Brookline', 'Newton']
+                elif 'type' in col.lower() or 'category' in col.lower():
+                    options = ['Type A', 'Type B', 'Type C']
+                elif 'season' in col.lower():
+                    options = ['winter', 'spring', 'summer', 'fall']
                 
-                return price
+                input_data[col] = st.sidebar.selectbox(col, options)
+    
+    # Fill in any missing features with default values
+    for feature in feature_names:
+        if feature not in input_data:
+            if feature in numeric_cols:
+                input_data[feature] = 0
             else:
-                # For single predictions
-                return np.array([1500])  # Default prediction
+                input_data[feature] = 'unknown'
     
-    return SyntheticModel(), feature_names, numeric_cols, categorical_cols
+    # Create a DataFrame with the input data
+    input_df = pd.DataFrame([input_data])
+    
+    return input_df
 
-# Function to get property features from API or generate synthetic data
-def get_property_features(address):
-    """
-    Get property features from API or generate synthetic data
-    """
-    # Try to get API key from secrets
-    api_key = st.secrets.get("RAPIDAPI_KEY", "")
-    
-    if api_key:
-        # Make API request to get property details
-        url = "https://zillow-com1.p.rapidapi.com/propertyExtendedSearch"
-        querystring = {"location": address}
-        headers = {
-            "X-RapidAPI-Key": api_key,
-            "X-RapidAPI-Host": "zillow-com1.p.rapidapi.com"
-        }
-        
-        try:
-            response = requests.get(url, headers=headers, params=querystring)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data and "props" in data and len(data["props"]) > 0:
-                    property_data = data["props"][0]
-                    
-                    # Extract relevant features
-                    features = {
-                        'ZIP_CODE': property_data.get("zipcode", "02108"),
-                        'PROP_TYPE': property_data.get("propertyType", "Apartment"),
-                        'SQUARE_FEET': property_data.get("livingArea", 1000),
-                        'NO_BEDROOMS': property_data.get("bedrooms", 2),
-                        'NO_BATHROOMS': property_data.get("bathrooms", 1),
-                        'YEAR_BUILT': property_data.get("yearBuilt", 1980),
-                        'HAS_PARKING': "Yes" if property_data.get("hasGarage", False) else "No",
-                        'HAS_POOL': "Yes" if property_data.get("hasPool", False) else "No",
-                        'DISTANCE_TO_CITY_CENTER': 5.0  # Default value
-                    }
-                    
-                    return features, property_data
-                
-        except Exception as e:
-            st.warning(f"Error fetching property data: {str(e)}. Using synthetic data for demonstration.")
-    
-    # If API request failed or no API key, generate synthetic data
-    st.info("Using synthetic property data for demonstration purposes.")
-    
-    # Generate random ZIP code from Boston area
-    boston_zip_codes = [
-        '02108', '02109', '02110', '02111', '02113', '02114', '02115', '02116',
-        '02118', '02119', '02120', '02121', '02122', '02124', '02125', '02126',
-        '02127', '02128', '02129', '02130', '02131', '02132', '02134', '02135',
-        '02136', '02210', '02215'
-    ]
-    
-    # Extract street number and name from address if possible
-    address_parts = address.split(' ', 1)
-    street_number = address_parts[0] if len(address_parts) > 0 and address_parts[0].isdigit() else "123"
-    street_name = address_parts[1] if len(address_parts) > 1 else "Main St"
-    
-    # Generate synthetic property data
-    synthetic_data = {
-        "address": {
-            "streetAddress": f"{street_number} {street_name}",
-            "city": "Boston",
-            "state": "MA",
-            "zipcode": random.choice(boston_zip_codes)
-        },
-        "bedrooms": random.randint(1, 4),
-        "bathrooms": random.randint(1, 3),
-        "livingArea": random.randint(700, 2000),
-        "yearBuilt": random.randint(1900, 2020),
-        "hasGarage": random.choice([True, False]),
-        "hasPool": random.choice([True, False]),
-        "price": random.randint(300000, 900000),
-        "propertyType": random.choice(["Apartment", "House", "Condo", "Townhouse"])
-    }
-    
-    # Extract features for model
-    features = {
-        'ZIP_CODE': synthetic_data["address"]["zipcode"],
-        'PROP_TYPE': synthetic_data["propertyType"],
-        'SQUARE_FEET': synthetic_data["livingArea"],
-        'NO_BEDROOMS': synthetic_data["bedrooms"],
-        'NO_BATHROOMS': synthetic_data["bathrooms"],
-        'YEAR_BUILT': synthetic_data["yearBuilt"],
-        'HAS_PARKING': "Yes" if synthetic_data["hasGarage"] else "No",
-        'HAS_POOL': "Yes" if synthetic_data["hasPool"] else "No",
-        'DISTANCE_TO_CITY_CENTER': random.uniform(1.0, 10.0)
-    }
-    
-    return features, synthetic_data
-
-# Function to get coordinates for an address
-def get_coordinates(address):
-    """
-    Get latitude and longitude for an address using Google Geocoding API or fallback
-    """
-    try:
-        # Get API key from secrets
-        api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
-        
-        if api_key:
-            # Make request to Google Geocoding API
-            url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={api_key}"
-            response = requests.get(url)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data["status"] == "OK" and data["results"]:
-                    location = data["results"][0]["geometry"]["location"]
-                    return location["lat"], location["lng"]
-        
-        # If we get here, either no API key or geocoding failed
-        # Try using Nominatim as a fallback
-        geolocator = Nominatim(user_agent="rental_predictor")
-        location = geolocator.geocode(address)
-        
-        if location:
-            return location.latitude, location.longitude
-        
-        # If all geocoding attempts fail, use a simple approximation for demonstration
-        st.info("Using approximate location for demonstration purposes.")
-        return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
-    except Exception as e:
-        st.warning(f"Error getting coordinates: {str(e)}. Using approximate location for demonstration.")
-        return 42.3601 + random.uniform(-0.05, 0.05), -71.0589 + random.uniform(-0.05, 0.05)
-
-# Function to create a map with the property location
-def create_property_map(lat, lon, property_data):
-    """
-    Create a map with the property location and nearby properties
-    """
-    # Create a map centered at the property location
-    m = folium.Map(location=[lat, lon], zoom_start=14)
-    
-    # Add a marker for the property
-    folium.Marker(
-        [lat, lon],
-        popup=f"<b>{property_data.get('address', {}).get('streetAddress', 'Property')}</b><br>"
-              f"Price: ${property_data.get('price', 'N/A')}<br>"
-              f"Beds: {property_data.get('bedrooms', 'N/A')}<br>"
-              f"Baths: {property_data.get('bathrooms', 'N/A')}<br>"
-              f"Sqft: {property_data.get('livingArea', 'N/A')}",
-        icon=folium.Icon(color="red", icon="home")
-    ).add_to(m)
-    
-    # Add nearby properties (simulated)
-    for i in range(5):
-        # Generate random coordinates near the property
-        nearby_lat = lat + random.uniform(-0.01, 0.01)
-        nearby_lon = lon + random.uniform(-0.01, 0.01)
-        
-        # Generate random property details
-        beds = random.randint(1, 4)
-        baths = random.randint(1, 3)
-        sqft = random.randint(700, 2000)
-        price = random.randint(300000, 900000)
-        
-        # Add marker for nearby property
-        folium.Marker(
-            [nearby_lat, nearby_lon],
-            popup=f"<b>Nearby Property {i+1}</b><br>"
-                  f"Price: ${price:,}<br>"
-                  f"Beds: {beds}<br>"
-                  f"Baths: {baths}<br>"
-                  f"Sqft: {sqft}",
-            icon=folium.Icon(color="blue", icon="info-sign")
-        ).add_to(m)
-    
-    # Display the map
-    st.subheader("Property Location")
-    folium_static(m)
-    
-    # Add caption explaining the markers
-    st.caption("Red marker: Main property | Blue markers: Nearby properties (simulated)")
-    
-    return True
-
-# Function to analyze rent prediction and find comparable properties
-def analyze_rent_prediction(listing, full_df, model, features_used):
-    """
-    Analyze rent prediction and find comparable properties
-    """
-    # Convert single listing to DataFrame
-    listing_df = pd.DataFrame([listing])
-    
-    # Predict rent
-    predicted_rent = model.predict(listing_df)[0]
-    
-    # Prepare DataFrame with target for comp filtering
-    if not full_df.empty and 'LIST_PRICE' in full_df.columns:
-        df_with_target = full_df[features_used + ['LIST_PRICE']].copy()
-        
-        # Find comps: Similar listings
-        comps = df_with_target[
-            (df_with_target['ZIP_CODE'] == listing['ZIP_CODE']) &
-            (df_with_target['PROP_TYPE'] == listing['PROP_TYPE']) &
-            (abs(df_with_target['SQUARE_FEET'] - listing['SQUARE_FEET']) <= 0.1 * listing['SQUARE_FEET']) &
-            (df_with_target['NO_BEDROOMS'] == listing['NO_BEDROOMS']) &
-            (df_with_target['LIST_PRICE'] > 0)
-        ]
-        
-        if len(comps) >= 5:
-            # Calculate statistics
-            median_rent = comps['LIST_PRICE'].median()
-            mean_rent = comps['LIST_PRICE'].mean()
-            min_rent = comps['LIST_PRICE'].min()
-            max_rent = comps['LIST_PRICE'].max()
-            
-            # Calculate percentiles
-            p25 = comps['LIST_PRICE'].quantile(0.25)
-            p75 = comps['LIST_PRICE'].quantile(0.75)
-            
-            # Calculate difference from median
-            diff_from_median = predicted_rent - median_rent
-            diff_percent = (diff_from_median / median_rent) * 100 if median_rent > 0 else 0
-            
-            # Determine if prediction is within IQR
-            within_iqr = p25 <= predicted_rent <= p75
-            
-            # Create analysis results
-            analysis = {
-                'predicted_rent': predicted_rent,
-                'median_rent': median_rent,
-                'mean_rent': mean_rent,
-                'min_rent': min_rent,
-                'max_rent': max_rent,
-                'p25': p25,
-                'p75': p75,
-                'diff_from_median': diff_from_median,
-                'diff_percent': diff_percent,
-                'within_iqr': within_iqr,
-                'comps': comps
-            }
-            
-            return analysis
-    
-    # If no comps found or empty dataframe, return basic analysis
-    return {
-        'predicted_rent': predicted_rent,
-        'median_rent': predicted_rent,
-        'mean_rent': predicted_rent,
-        'min_rent': predicted_rent * 0.8,
-        'max_rent': predicted_rent * 1.2,
-        'p25': predicted_rent * 0.9,
-        'p75': predicted_rent * 1.1,
-        'diff_from_median': 0,
-        'diff_percent': 0,
-        'within_iqr': True,
-        'comps': pd.DataFrame()
-    }
-
-# Function to plot rent success probability
-def plot_rent_success_probability(listing, full_df, model, features_used):
-    """
-    Plot rent success probability using KDE
-    """
-    # Predict rent
-    listing_df = pd.DataFrame([listing])
-    predicted_rent = model.predict(listing_df)[0]
-    
-    # Get comps
-    if not full_df.empty and 'LIST_PRICE' in full_df.columns:
-        df_with_target = full_df[features_used + ['LIST_PRICE']].copy()
-        comps = df_with_target[
-            (df_with_target['ZIP_CODE'] == listing['ZIP_CODE']) &
-            (df_with_target['PROP_TYPE'] == listing['PROP_TYPE']) &
-            (abs(df_with_target['SQUARE_FEET'] - listing['SQUARE_FEET']) <= 0.1 * listing['SQUARE_FEET']) &
-            (df_with_target['NO_BEDROOMS'] == listing['NO_BEDROOMS']) &
-            (df_with_target['LIST_PRICE'] > 0)
-        ]
-        
-        if len(comps) < 5:
-            st.warning("⚠️ Not enough comparable properties to generate a meaningful probability curve. Using synthetic data for demonstration.")
-            # Generate synthetic rent prices
-            rent_prices = np.random.normal(predicted_rent, predicted_rent * 0.1, 100)
-        else:
-            rent_prices = comps['LIST_PRICE'].values
-    else:
-        st.info("Using synthetic data for demonstration purposes.")
-        # Generate synthetic rent prices
-        rent_prices = np.random.normal(predicted_rent, predicted_rent * 0.1, 100)
-    
-    # Use KDE to estimate probability density
-    try:
-        kde = gaussian_kde(rent_prices)
-        
-        # Generate rent range for plotting
-        min_rent = max(0, min(rent_prices) * 0.8)
-        max_rent = max(rent_prices) * 1.2
-        rent_range = np.linspace(min_rent, max_rent, 100)
-        
-        # Evaluate KDE at each point in rent range
-        probabilities = kde(rent_range)
-        
-        # Normalize probabilities to 0-100% for easier interpretation
-        probabilities = probabilities / max(probabilities) * 100
-        
-        # Find probability at predicted rent
-        probability_at_prediction = kde(predicted_rent)[0] / max(kde(rent_range)) * 100
-        
-        # Find the rent with maximum probability
-        optimal_rent_index = np.argmax(probabilities)
-        optimal_rent = rent_range[optimal_rent_index]
-        
-        # Create the plot
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        # Plot the probability curve
-        ax.plot(rent_range, probabilities, 'b-', linewidth=2)
-        
-        # Fill under the curve
-        ax.fill_between(rent_range, probabilities, alpha=0.3, color='blue')
-        
-        # Mark the predicted rent
-        ax.axvline(x=predicted_rent, color='red', linestyle='--', linewidth=2)
-        ax.text(predicted_rent, max(probabilities) * 0.8, f'Predicted: ${predicted_rent:.2f}', 
-                rotation=90, verticalalignment='top')
-        
-        # Mark the optimal rent
-        ax.axvline(x=optimal_rent, color='green', linestyle='--', linewidth=2)
-        ax.text(optimal_rent, max(probabilities) * 0.9, f'Optimal: ${optimal_rent:.2f}', 
-                rotation=90, verticalalignment='top')
-        
-        # Add labels and title
-        ax.set_xlabel('Rental Price ($)')
-        ax.set_ylabel('Success Probability (%)')
-        ax.set_title('Rental Success Probability by Price')
-        
-        # Add grid
-        ax.grid(True, linestyle='--', alpha=0.7)
-        
-        # Add legend
-        from matplotlib.lines import Line2D
-        legend_elements = [
-            Line2D([0], [0], color='red', linestyle='--', linewidth=2, label=f'Predicted: ${predicted_rent:.2f}'),
-            Line2D([0], [0], color='green', linestyle='--', linewidth=2, label=f'Optimal: ${optimal_rent:.2f}')
-        ]
-        ax.legend(handles=legend_elements, loc='upper right')
-        
-        # Show the plot
-        st.pyplot(fig)
-        
-        # Return the results
-        return {
-            'predicted_rent': predicted_rent,
-            'optimal_rent': optimal_rent,
-            'probability_at_prediction': probability_at_prediction,
-            'rent_range': rent_range,
-            'probabilities': probabilities,
-            'comps': comps if 'comps' in locals() else pd.DataFrame()
-        }
-    
-    except Exception as e:
-        st.error(f"Error generating probability curve: {str(e)}")
-        return None
-
-# Main function
+# Main function to run the Streamlit app
 def main():
     """
-    Main function to run the Streamlit application
+    Main function to run the Streamlit app
     """
     # Set page title and description
+    st.set_page_config(
+        page_title="Rental Income Prediction",
+        page_icon="💰",
+        layout="wide"
+    )
+    
     st.title("Rental Income Prediction Tool")
-    st.write("This tool helps real estate investors predict rental income based on property characteristics. Use the sidebar to input property details and see the predicted rental income.")
+    st.markdown("""
+    This tool helps real estate investors predict rental income based on property characteristics.
+    Use the sidebar to input property details and see the predicted rental income.
+    """)
     
-    # Load or create the model
-    model, feature_names, numeric_cols, categorical_cols = load_or_create_model()
+    # Load the model and feature information
+    model, feature_names, numeric_cols, categorical_cols = load_model()
     
-    # Load data for comps analysis
-    rental_df, sold_df = load_data()
+    if model is None:
+        st.error("Error: Failed to load or create model. Please check the logs.")
+        return
     
-    # Create sidebar for property search
-    st.sidebar.title("Property Search")
-    address = st.sidebar.text_input("Enter property address")
+    # Create two columns for the main content
+    col1, col2 = st.columns([2, 1])
     
-    # Search button
-    search_button = st.sidebar.button("Search Property")
-    
-    # Main content area
-    if search_button and address:
-        # Get property features from API or generate synthetic data
-        property_features, property_data = get_property_features(address)
-        
-        # Create DataFrame for prediction
-        input_df = pd.DataFrame([property_features])
-        
-        # Make prediction
-        predicted_rent = model.predict(input_df)[0]
-        
-        # Display property details and prediction
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Property Details")
-            st.write(f"**Address:** {property_data.get('address', {}).get('streetAddress', 'N/A')}, "
-                    f"{property_data.get('address', {}).get('city', 'Boston')}, "
-                    f"{property_data.get('address', {}).get('state', 'MA')} "
-                    f"{property_data.get('address', {}).get('zipcode', 'N/A')}")
-            st.write(f"**Price:** ${property_data.get('price', 'N/A'):,}")
-            st.write(f"**Bedrooms:** {property_data.get('bedrooms', 'N/A')}")
-            st.write(f"**Bathrooms:** {property_data.get('bathrooms', 'N/A')}")
-            st.write(f"**Square Feet:** {property_data.get('livingArea', 'N/A')}")
-            st.write(f"**Year Built:** {property_data.get('yearBuilt', 'N/A')}")
-            st.write(f"**Property Type:** {property_data.get('propertyType', 'N/A')}")
-        
-        with col2:
-            # Get coordinates and create map
-            lat, lon = get_coordinates(address)
-            
-            if lat and lon:
-                create_property_map(lat, lon, property_data)
-            else:
-                st.warning("Could not determine property location for map display.")
-        
-        # Display prediction results
+    with col1:
         st.header("Prediction Results")
         
-        # Analyze rent prediction
-        analysis = analyze_rent_prediction(property_features, rental_df, model, feature_names)
+        # Create sample input based on user inputs
+        input_df = create_sample_input(feature_names, numeric_cols, categorical_cols)
         
-        # Display predicted rental income
+        # Make prediction
+        prediction = model.predict(input_df)[0]
+        
+        # Display prediction
         st.subheader("Predicted Rental Income")
-        st.markdown(f"<h1 style='color: #1E88E5;'>${predicted_rent:.2f} per month</h1>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='color: #1E88E5;'>${prediction:.2f} per month</h1>", unsafe_allow_html=True)
         
-        # Display rent adjustment slider
+        # Allow user to adjust the prediction
         st.subheader("Adjust Rental Income")
-        st.write("Your Rental Price")
+        adjusted_price = st.slider("Your Rental Price", 
+                                  float(max(0, prediction * 0.5)), 
+                                  float(prediction * 1.5), 
+                                  float(prediction))
         
-        # Set min and max values for slider
-        min_price = max(100, analysis['min_rent'] * 0.8)
-        max_price = analysis['max_rent'] * 1.2
+        # Calculate and display difference
+        difference = adjusted_price - prediction
+        difference_percent = (difference / prediction) * 100
         
-        # Create slider for adjusting rent
-        adjusted_rent = st.slider(
-            "Adjust rent",
-            min_value=float(min_price),
-            max_value=float(max_price),
-            value=float(predicted_rent),
-            step=25.0,
-            format="$%.2f"
-        )
-        
-        # Compare adjusted rent with prediction
-        if abs(adjusted_rent - predicted_rent) < 0.01:
-            st.write("Your price matches the prediction (at market rate)")
-        elif adjusted_rent > predicted_rent:
-            st.write(f"Your price is ${adjusted_rent - predicted_rent:.2f} above the prediction ({((adjusted_rent / predicted_rent) - 1) * 100:.1f}% higher)")
+        if difference > 0:
+            st.markdown(f"<p style='color: green;'>Your price is <b>${difference:.2f}</b> higher than the prediction ({difference_percent:.1f}% above market rate)</p>", unsafe_allow_html=True)
+        elif difference < 0:
+            st.markdown(f"<p style='color: red;'>Your price is <b>${abs(difference):.2f}</b> lower than the prediction ({abs(difference_percent):.1f}% below market rate)</p>", unsafe_allow_html=True)
         else:
-            st.write(f"Your price is ${predicted_rent - adjusted_rent:.2f} below the prediction ({((predicted_rent / adjusted_rent) - 1) * 100:.1f}% lower)")
+            st.markdown("<p>Your price matches the prediction (at market rate)</p>", unsafe_allow_html=True)
         
-        # Display rental success probability
-        st.header("Rental Success Probability")
-        st.write("This graph shows the probability of successfully renting the property at different price points.")
+        # Display market positioning
+        st.subheader("Market Positioning")
         
-        # Plot rent success probability
-        probability_results = plot_rent_success_probability(property_features, rental_df, model, feature_names)
+        # Create a gauge chart to show market positioning
+        fig, ax = plt.subplots(figsize=(10, 2))
         
-        if probability_results:
-            # Display optimal rent recommendation
-            st.subheader("Rent Optimization")
+        # Define the range (50% below to 50% above prediction)
+        min_val = prediction * 0.5
+        max_val = prediction * 1.5
+        
+        # Create a horizontal bar for the range
+        ax.barh(0, max_val - min_val, left=min_val, height=0.5, color='lightgray')
+        
+        # Add markers for min, prediction, and max
+        ax.scatter([min_val, prediction, max_val], [0, 0, 0], color=['red', 'blue', 'green'], s=100, zorder=5)
+        
+        # Add a marker for the adjusted price
+        ax.scatter([adjusted_price], [0], color='orange', s=150, marker='*', zorder=10)
+        
+        # Add labels
+        ax.text(min_val, 0.7, 'Below Market', ha='center', va='bottom', color='red')
+        ax.text(prediction, 0.7, 'Market Rate', ha='center', va='bottom', color='blue')
+        ax.text(max_val, 0.7, 'Above Market', ha='center', va='bottom', color='green')
+        ax.text(adjusted_price, -0.7, 'Your Price', ha='center', va='top', color='orange')
+        
+        # Remove y-axis and set x-axis limits
+        ax.set_ylim(-1, 1)
+        ax.set_xlim(min_val * 0.9, max_val * 1.1)
+        ax.set_yticks([])
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        
+        # Format x-axis labels as currency
+        ax.xaxis.set_major_formatter('${x:,.0f}')
+        
+        plt.tight_layout()
+        st.pyplot(fig)
+    
+    with col2:
+        st.header("Feature Importance")
+        
+        # Get feature importance
+        feature_importance = get_feature_importance(model, feature_names)
+        
+        if not feature_importance.empty:
+            # Display top 10 features
+            st.subheader("Top 10 Influential Features")
             
-            optimal_rent = probability_results['optimal_rent']
-            predicted_rent = probability_results['predicted_rent']
+            # Create a bar chart of feature importance
+            fig, ax = plt.subplots(figsize=(10, 8))
+            sns.barplot(x='Importance', y='Feature', data=feature_importance.head(10), ax=ax)
+            ax.set_title('Top 10 Features by Importance')
+            ax.set_xlabel('Importance')
+            ax.set_ylabel('Feature')
+            plt.tight_layout()
+            st.pyplot(fig)
             
-            if abs(optimal_rent - predicted_rent) < predicted_rent * 0.01:
-                st.success("✅ The predicted rent is very close to the optimal rent based on market data.")
-            elif optimal_rent > predicted_rent:
-                st.info(f"💡 Consider increasing the rent to ${optimal_rent:.2f} (${optimal_rent - predicted_rent:.2f} more) for optimal market positioning.")
+            # Generate SHAP explanations for this specific prediction
+            st.subheader("Prediction Explanation")
+            shap_values = generate_shap_explanations(model, input_df)
+            
+            if not shap_values.empty:
+                # Display top 5 features that influenced this prediction
+                st.markdown("### Factors Influencing This Prediction")
+                
+                # Create a horizontal bar chart of SHAP values
+                fig, ax = plt.subplots(figsize=(10, 6))
+                colors = ['red' if x < 0 else 'green' for x in shap_values.head(5)['SHAP Value']]
+                sns.barplot(x='SHAP Value', y='Feature', data=shap_values.head(5), palette=colors, ax=ax)
+                ax.set_title('Top 5 Factors Influencing This Prediction')
+                ax.set_xlabel('Impact on Prediction')
+                ax.set_ylabel('Feature')
+                plt.tight_layout()
+                st.pyplot(fig)
+                
+                # Provide text explanations
+                st.markdown("### Explanation")
+                
+                for _, row in shap_values.head(5).iterrows():
+                    feature = row['Feature']
+                    shap_value = row['SHAP Value']
+                    
+                    # Clean up feature name for display
+                    display_feature = feature.replace('preprocessor__num__', '').replace('preprocessor__cat__', '')
+                    
+                    if shap_value > 0:
+                        st.markdown(f"- **{display_feature}**: Increased the predicted rent by **${shap_value:.2f}**")
+                    else:
+                        st.markdown(f"- **{display_feature}**: Decreased the predicted rent by **${abs(shap_value):.2f}**")
             else:
-                st.info(f"💡 Consider decreasing the rent to ${optimal_rent:.2f} (${predicted_rent - optimal_rent:.2f} less) for optimal market positioning.")
+                st.info("SHAP explanations are not available for this model or prediction.")
+        else:
+            st.info("Feature importance information is not available for this model.")
+    
+    # Display property details
+    st.header("Property Details")
+    
+    # Create three columns for property details
+    detail_col1, detail_col2, detail_col3 = st.columns(3)
+    
+    with detail_col1:
+        st.subheader("Basic Information")
+        if 'NO_BEDROOMS' in input_df.columns:
+            st.markdown(f"**Bedrooms:** {input_df['NO_BEDROOMS'].values[0]}")
+        if 'SQUARE_FEET' in input_df.columns:
+            st.markdown(f"**Square Footage:** {input_df['SQUARE_FEET'].values[0]}")
         
-        # Display comparable properties
-        st.header("Comparable Properties")
+        # Display location information
+        location_cols = [col for col in input_df.columns if any(term in col.lower() for term in ['town', 'neighborhood', 'zip'])]
+        if location_cols:
+            st.markdown(f"**Location:** {input_df[location_cols[0]].values[0]}")
+    
+    with detail_col2:
+        st.subheader("Seasonal Information")
+        # Display seasonal information
+        season_cols = [col for col in input_df.columns if 'season' in col.lower()]
+        if season_cols:
+            st.markdown(f"**Season:** {input_df[season_cols[0]].values[0]}")
         
-        if 'comps' in analysis and not analysis['comps'].empty and len(analysis['comps']) >= 5:
-            st.write(f"Found {len(analysis['comps'])} comparable properties in the same area with similar features.")
-            
-            # Display comps in a table
-            comps_display = analysis['comps'].copy()
-            comps_display = comps_display.sort_values('LIST_PRICE')
-            
-            # Format the display columns
-            display_cols = ['ZIP_CODE', 'PROP_TYPE', 'SQUARE_FEET', 'NO_BEDROOMS', 'NO_BATHROOMS', 'LIST_PRICE']
-            display_cols = [col for col in display_cols if col in comps_display.columns]
-            
-            # Rename columns for display
-            rename_dict = {
-                'ZIP_CODE': 'ZIP Code',
-                'PROP_TYPE': 'Property Type',
-                'SQUARE_FEET': 'Square Feet',
-                'NO_BEDROOMS': 'Bedrooms',
-                'NO_BATHROOMS': 'Bathrooms',
-                'LIST_PRICE': 'Rent Price'
+        # Display month information
+        month_cols = [col for col in input_df.columns if 'month' in col.lower()]
+        if month_cols:
+            month_map = {
+                1: 'January', 2: 'February', 3: 'March', 4: 'April',
+                5: 'May', 6: 'June', 7: 'July', 8: 'August',
+                9: 'September', 10: 'October', 11: 'November', 12: 'December'
             }
-            
-            comps_display = comps_display[display_cols].rename(columns=rename_dict)
-            
-            # Format the price column
-            if 'Rent Price' in comps_display.columns:
-                comps_display['Rent Price'] = comps_display['Rent Price'].apply(lambda x: f"${x:.2f}")
-            
-            st.dataframe(comps_display)
-        else:
-            st.info("No comparable properties found in the dataset. Using model prediction only.")
+            month_value = input_df[month_cols[0]].values[0]
+            month_name = month_map.get(month_value, month_value)
+            st.markdown(f"**Month:** {month_name}")
+    
+    with detail_col3:
+        st.subheader("Property Characteristics")
+        # Display property type information
+        property_type_cols = [col for col in input_df.columns if 'property_size_category' in col.lower()]
+        if property_type_cols:
+            st.markdown(f"**Property Size Category:** {input_df[property_type_cols[0]].values[0]}")
         
-        # Display model information
-        st.header("About the Model")
-        
-        if CATBOOST_AVAILABLE:
-            st.write("""
-            This rental income prediction model uses CatBoost, a gradient boosting algorithm that excels at handling categorical features.
-            
-            **Key advantages of CatBoost:**
-            - Handles categorical features natively without one-hot encoding
-            - Reduces overfitting with a specialized algorithm
-            - Provides robust predictions even with limited data
-            
-            The model takes into account various factors including property size, number of bedrooms and bathrooms,
-            location, and other features to predict the optimal rental income.
-            
-            The rental success probability is calculated using Kernel Density Estimation (KDE), which analyzes the
-            distribution of rental prices for similar properties in the area.
-            """)
-            
-            st.subheader("Potential Model Improvements")
-            st.write("""
-            The current model could be improved in several ways:
-            
-            1. **More training data**: Collecting more rental data, especially for diverse property types and locations
-            2. **Feature engineering**: Creating additional features like proximity to amenities, school ratings, etc.
-            3. **Hyperparameter tuning**: Fine-tuning the CatBoost parameters for better performance
-            4. **Seasonal adjustments**: Incorporating time-based features to account for rental market seasonality
-            5. **External data integration**: Adding economic indicators, neighborhood statistics, etc.
-            """)
-        else:
-            st.write("""
-            This rental income prediction model uses a Random Forest algorithm to estimate rental prices based on
-            property characteristics.
-            
-            The model takes into account various factors including property size, number of bedrooms and bathrooms,
-            location, and other features to predict the optimal rental income.
-            
-            The rental success probability is calculated using Kernel Density Estimation (KDE), which analyzes the
-            distribution of rental prices for similar properties in the area.
-            
-            **Note**: For better performance, consider installing CatBoost, which handles categorical features better
-            and often provides more accurate predictions.
-            """)
-    else:
-        st.info("Please enter an address to search for a property.")
+        # Display bedroom category information
+        bedroom_category_cols = [col for col in input_df.columns if 'bedroom_category' in col.lower()]
+        if bedroom_category_cols:
+            st.markdown(f"**Bedroom Category:** {input_df[bedroom_category_cols[0]].values[0]}")
+    
+    # Add information about the model
+    st.header("About the Model")
+    st.markdown("""
+    This rental income prediction model was trained on a comprehensive dataset of rental properties.
+    The model takes into account various factors including property characteristics, location, and
+    seasonal trends to predict the optimal rental income.
+    
+    The model's predictions are based on historical rental data and market trends, providing
+    real estate investors with data-driven insights for optimizing rental income.
+    """)
     
     # Add footer
     st.markdown("---")
