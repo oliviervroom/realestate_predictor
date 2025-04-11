@@ -28,6 +28,14 @@ export const searchProperties = async (query) => {
 
     const results = response?.data?.data?.home_search?.results || [];
 
+//Katts model expects: 
+//"CITY", "NEIGHBORHOOD", "ZIP_CODE", "SEASONAL_CONTEXT",
+//"PROP_TYPE", "SQUARE_FEET", "LOT_SIZE", "NO_BEDROOMS", "TOTAL_BATHS",
+//"TOTAL_PARKING_RN", "FURNISHED_RN", "PETS_ALLOWED_RN",
+//"SEC_DEPOSIT_RN", "TERM_OF_RENTAL_RN", "RENT_FEE_INCLUDES_RN", "RENTAL_TERMS_RN",
+//"DAYS_ON_MARKET", "MLS_COMP_BUILDING_ID", "COMP_STATUS",
+//"LIST_PRICE", "Predicted_Rent"
+
     return results.map((item) => ({
       property_id: item?.property_id,
       price: item?.list_price,
