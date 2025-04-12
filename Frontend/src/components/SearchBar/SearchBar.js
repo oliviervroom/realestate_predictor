@@ -11,10 +11,11 @@ const SearchBar = ({ onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [anchorEl, setAnchorEl] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleSearch = useCallback(() => {
     if (searchTerm.trim()) {
+      setShowSuggestions(false);
       onSearch(searchTerm);
     }
   }, [searchTerm, onSearch]);
@@ -29,27 +30,42 @@ const SearchBar = ({ onSearch }) => {
     debounce(async (value) => {
       if (value.length < 2) {
         setSuggestions([]);
+        setShowSuggestions(false);
         return;
       }
 
       setIsLoading(true);
       try {
         const results = await getLocationSuggestions(value);
-        setSuggestions(results.slice(0, 5));
+        // Only update if the component is still mounted and the search term hasn't changed
+        if (Array.isArray(results)) {
+          const formattedSuggestions = results
+            .filter(item => item.city || item.state)
+            .map(item => ({
+              city: item.city || '',
+              state: item.state || '',
+              state_code: item.state_code || '',
+              _id: item._id || `${item.city}-${item.state_code}`
+            }))
+            .slice(0, 5);
+          
+          setSuggestions(formattedSuggestions);
+          setShowSuggestions(formattedSuggestions.length > 0);
+        }
       } catch (error) {
         console.error('Error fetching suggestions:', error);
         setSuggestions([]);
+        setShowSuggestions(false);
       } finally {
         setIsLoading(false);
       }
-    }, 500),
+    }, 300),
     []
   );
 
   const handleChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    setAnchorEl(e.currentTarget);
     debouncedSearch(value);
   };
 
@@ -57,6 +73,7 @@ const SearchBar = ({ onSearch }) => {
     const locationString = `${suggestion.city}, ${suggestion.state_code}`;
     setSearchTerm(locationString);
     setSuggestions([]);
+    setShowSuggestions(false);
     onSearch(locationString);
   };
 
@@ -88,13 +105,12 @@ const SearchBar = ({ onSearch }) => {
             },
           }}
         />
-        <IconButton
+        <IconButton 
           onClick={handleSearch}
-          sx={{
-            backgroundColor: '#c82021',
+          sx={{ 
             color: 'white',
             '&:hover': {
-              backgroundColor: '#a51a1b'
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
             }
           }}
         >
@@ -102,35 +118,38 @@ const SearchBar = ({ onSearch }) => {
         </IconButton>
       </Box>
 
-      {isLoading && <Loader text="Loading suggestions..." />}
+      {isLoading && <Loader />}
 
-      {!isLoading && suggestions.length > 0 && (
-        <Paper
-          sx={{
-            position: 'absolute',
-            zIndex: 10,
-            width: anchorEl?.offsetWidth || '100%',
-            mt: -1,
-            bgcolor: '#ffffff',
-            color: '#000000',
-            maxHeight: 250,
-            overflowY: 'auto',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      {showSuggestions && suggestions.length > 0 && (
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            position: 'absolute', 
+            top: '100%', 
+            left: 0, 
+            right: 0, 
+            zIndex: 1000,
+            maxHeight: '300px',
+            overflow: 'auto',
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}
         >
-          <List dense>
-            {suggestions.map((suggestion) => (
+          <List>
+            {suggestions.map((suggestion, index) => (
               <ListItem
-                key={suggestion._id}
+                key={suggestion._id || index}
                 button
                 onClick={() => handleSuggestionClick(suggestion)}
                 sx={{
-                  '&:hover': { backgroundColor: '#f2f2f2' },
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }
                 }}
               >
-                <ListItemText
+                <ListItemText 
                   primary={`${suggestion.city}, ${suggestion.state_code}`}
-                  secondary={suggestion.counties?.[0]?.name || ''}
+                  sx={{ color: 'white' }}
                 />
               </ListItem>
             ))}

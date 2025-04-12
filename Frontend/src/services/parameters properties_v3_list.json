@@ -1,0 +1,194 @@
+{
+  "limit": {
+    "type": "int",
+    "description": "Number of items per response, for paging purpose"
+  },
+  "offset": {
+    "type": "int",
+    "description": "The page index, for paging purpose"
+  },
+  "state_code": {
+    "type": "string",
+    "description": "Filter properties by state"
+  },
+  "city": {
+    "type": "string",
+    "description": "Filter properties by city"
+  },
+  "street_name": {
+    "type": "string",
+    "description": "Filter properties by street"
+  },
+  "address": {
+    "type": "string",
+    "description": "Filter properties by address"
+  },
+  "postal_code": {
+    "type": "string",
+    "description": "Filter properties by postal code"
+  },
+  "agent_source_id": {
+    "type": "string",
+    "description": "ID from agents endpoint"
+  },
+  "selling_agent_name": {
+    "type": "string",
+    "description": "Agent first/last name from profile/list endpoint"
+  },
+  "source_listing_id": {
+    "type": "string",
+    "description": "The MLS ID of a property"
+  },
+  "property_id": {
+    "type": "string",
+    "description": "The property_id of a property"
+  },
+  "fulfillment_id": {
+    "type": "string",
+    "description": "Fulfillment ID from agents endpoint"
+  },
+  "search_location": {
+    "type": "object",
+    "description": "Filter properties around a location",
+    "example": {
+      "radius": 25,
+      "location": "2425 Sahalee Dr W"
+    }
+  },
+  "radius": {
+    "type": "int",
+    "description": "Radius in miles for search_location"
+  },
+  "location": {
+    "type": "string",
+    "description": "Address or postal code for search"
+  },
+  "status": {
+    "type": "array of string",
+    "description": "Property status filter",
+    "example": ["for_sale", "ready_to_build"]
+  },
+  "type": {
+    "type": "array of string",
+    "description": "Property type filter",
+    "example": ["apartment", "condo_townhome"]
+  },
+  "keywords": {
+    "type": "string",
+    "description": "Keyword-based filter on features",
+    "example": ["basement", "carport"]
+  },
+  "boundary": {
+    "type": "object",
+    "description": "GeoJSON polygon to filter within area",
+    "example": {
+      "coordinates": [[[ -117.684674198, 35.277450023 ], [ -117.631311189, 35.274184026 ]]]
+    }
+  },
+  "baths": {
+    "type": "object",
+    "description": "Filter by number of bathrooms",
+    "example": { "min": 4 }
+  },
+  "beds": {
+    "type": "object",
+    "description": "Filter by number of bedrooms",
+    "example": { "min": 1, "max": 3 }
+  },
+  "open_house": {
+    "type": "object",
+    "description": "Filter by open house dates",
+    "example": { "min": "2022-09-25", "max": "2022-10-25" }
+  },
+  "year_built": {
+    "type": "object",
+    "description": "Filter by year built",
+    "example": { "min": 2017, "max": 2019 }
+  },
+  "sold_price": {
+    "type": "object",
+    "description": "Filter by sold price",
+    "example": { "min": 20000, "max": 40000 }
+  },
+  "sold_date": {
+    "type": "object",
+    "description": "Filter by sold date",
+    "example": { "min": "2022-03-25", "max": "2022-09-25" }
+  },
+  "list_price": {
+    "type": "object",
+    "description": "Filter by listing price",
+    "example": { "min": 200, "max": 900 }
+  },
+  "lot_sqft": {
+    "type": "object",
+    "description": "Filter by lot square footage",
+    "example": { "min": 3000, "max": 5000 }
+  },
+  "sqft": {
+    "type": "object",
+    "description": "Filter by interior square footage",
+    "example": { "min": 3000, "max": 5000 }
+  },
+  "hoa_fee": {
+    "type": "object",
+    "description": "Filter by HOA fee (inactive if no_hoa_fee = true)",
+    "example": { "max": 2 }
+  },
+  "no_hoa_fee": {
+    "type": "boolean",
+    "description": "Filter only properties with no HOA fee"
+  },
+  "pending": {
+    "type": "boolean",
+    "description": "Filter for pending properties"
+  },
+  "contingent": {
+    "type": "boolean",
+    "description": "Filter for contingent properties"
+  },
+  "foreclosure": {
+    "type": "boolean",
+    "description": "Filter for foreclosed properties"
+  },
+  "has_tour": {
+    "type": "boolean",
+    "description": "Filter for listings with virtual tours"
+  },
+  "new_construction": {
+    "type": "boolean",
+    "description": "Filter for new construction"
+  },
+  "cats": {
+    "type": "boolean",
+    "description": "Pet policy filter: cats allowed"
+  },
+  "dogs": {
+    "type": "boolean",
+    "description": "Pet policy filter: dogs allowed"
+  },
+  "matterport": {
+    "type": "boolean",
+    "description": "Filter for listings with Matterport tours"
+  },
+  "sort": {
+    "type": "object",
+    "description": "Sorting options",
+    "example": { "direction": "desc", "field": "list_date" }
+  },
+  "direction": {
+    "type": "string",
+    "description": "Sort direction",
+    "options": ["desc", "asc"]
+  },
+  "field": {
+    "type": "string",
+    "description": "Field to sort by",
+    "options": [
+      "photo_count", "last_update_date", "list_date",
+      "list_price", "sold_date", "sold_price", "beds", "lot_sqft"
+    ]
+  }
+}
+
+Let me know if you’d like this grouped or sorted differently (e.g., by type or category).

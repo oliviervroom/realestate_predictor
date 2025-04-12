@@ -1,6 +1,45 @@
 import axios from 'axios';
 import { VERSION } from '../version';
 
+// Rate limiter class
+class RateLimiter {
+  constructor(requestsPerSecond) {
+    this.requestsPerSecond = requestsPerSecond;
+    this.queue = [];
+    this.processing = false;
+  }
+
+  async add(request) {
+    return new Promise((resolve) => {
+      this.queue.push({ request, resolve });
+      this.processQueue();
+    });
+  }
+
+  async processQueue() {
+    if (this.processing || this.queue.length === 0) return;
+    
+    this.processing = true;
+    const { request, resolve } = this.queue.shift();
+    
+    try {
+      const result = await request();
+      resolve(result);
+    } catch (error) {
+      resolve({ error });
+    }
+    
+    // Wait for the rate limit period
+    await new Promise(resolve => setTimeout(resolve, 1000 / this.requestsPerSecond));
+    
+    this.processing = false;
+    this.processQueue();
+  }
+}
+
+// Create rate limiter instance (5 requests per second)
+const rateLimiter = new RateLimiter(5);
+
 const realtyApi = axios.create({
   baseURL: 'https://realty-in-us.p.rapidapi.com',
   headers: {
@@ -31,15 +70,54 @@ export const searchProperties = async (location = 'Manchester, NH', filters = {}
       }
     };
 
+    // Collect debug information
+    const debugSteps = [];
+    debugSteps.push({ step: 'Initial Filters', data: filters });
+
     // Add bedroom filter if specified
     if (filters.beds) {
-      requestData.beds = filters.beds;
+      requestData.beds = {
+        min: filters.beds.min
+      };
+      if (filters.beds.max) {
+        requestData.beds.max = filters.beds.max;
+      }
+      debugSteps.push({ step: 'Beds Filter Added', data: requestData.beds });
     }
 
     // Add bathroom filter if specified
     if (filters.baths) {
-      requestData.baths_min = filters.baths.min;
-      requestData.baths_max = filters.baths.max;
+      requestData.baths = {
+        min: filters.baths.min
+      };
+      if (filters.baths.max) {
+        requestData.baths.max = filters.baths.max;
+      }
+      debugSteps.push({ step: 'Baths Filter Added', data: requestData.baths });
+    }
+
+    // Add price filter if specified
+    if (filters.price) {
+      requestData.list_price = {};
+      if (filters.price.min) {
+        requestData.list_price.min = filters.price.min;
+      }
+      if (filters.price.max) {
+        requestData.list_price.max = filters.price.max;
+      }
+      debugSteps.push({ step: 'Price Filter Added', data: requestData.list_price });
+    }
+
+    // Add square footage filter if specified
+    if (filters.sqft) {
+      requestData.sqft = {};
+      if (filters.sqft.min) {
+        requestData.sqft.min = filters.sqft.min;
+      }
+      if (filters.sqft.max && filters.sqft.max < 4000) {
+        requestData.sqft.max = filters.sqft.max;
+      }
+      debugSteps.push({ step: 'Square Footage Filter Added', data: requestData.sqft });
     }
 
     // Add location parameters based on search type
@@ -52,15 +130,23 @@ export const searchProperties = async (location = 'Manchester, NH', filters = {}
           success: false,
           errorSource: 'Client Validation',
           errorMessage: 'Please provide both city and state (e.g., "Boston, MA")',
-          version: VERSION
+          version: VERSION,
+          debugSteps
         };
       }
       requestData.city = city;
       requestData.state_code = state_code;
     }
 
-    console.log('API Request:', requestData);
-    const response = await realtyApi.post('/properties/v3/list', requestData);
+    console.log('Final API Request:', requestData);
+
+    // Use rate limiter for the API call
+    const response = await rateLimiter.add(() => realtyApi.post('/properties/v3/list', requestData));
+    
+    if (response.error) {
+      throw response.error;
+    }
+
     console.log('API Response:', response.data);
 
     if (response.data?.errors) {
@@ -70,7 +156,8 @@ export const searchProperties = async (location = 'Manchester, NH', filters = {}
         error: response.data,
         errorSource: 'Realty API',
         errorMessage: response.data.errors[0]?.data?.message || 'API Error',
-        version: VERSION
+        version: VERSION,
+        debugSteps
       };
     }
 
@@ -82,7 +169,8 @@ export const searchProperties = async (location = 'Manchester, NH', filters = {}
         error: response.data,
         errorSource: 'Data Processing',
         errorMessage: 'Invalid response format: missing or invalid results array',
-        version: VERSION
+        version: VERSION,
+        debugSteps
       };
     }
 
@@ -108,35 +196,49 @@ export const searchProperties = async (location = 'Manchester, NH', filters = {}
       raw_data: item // Keep raw data for debugging
     }));
 
+    // Add client-side price filtering as a safety measure
+    const filteredResults = processedResults.filter(item => {
+      const price = item.price;
+      if (!price) return true; // Keep items without price info
+      
+      if (filters.price?.min && price < filters.price.min) return false;
+      if (filters.price?.max && price > filters.price.max) return false;
+      
+      return true;
+    });
+
     return {
       success: true,
       requestData,
       responseData: response.data,
-      processedData: processedResults,
-      version: VERSION
+      processedData: filteredResults,
+      version: VERSION,
+      debugSteps
     };
   } catch (error) {
-    console.error('Error:', error.response?.data || error.message);
+    console.error('API Error:', error);
     return {
       success: false,
-      requestData: error.config?.data ? JSON.parse(error.config.data) : {},
-      error: error.response?.data || error.message,
-      errorSource: 'Network/Server',
-      errorMessage: error.response?.data?.errors?.[0]?.data?.message || 
-                   error.response?.data?.message || 
-                   error.message ||
-                   'Failed to fetch properties',
-      version: VERSION
+      errorSource: 'Network',
+      errorMessage: error.message || 'Failed to fetch properties',
+      version: VERSION,
+      debugSteps: []
     };
   }
 };
 
 export const getPropertyDetails = async (propertyId) => {
   try {
-    const response = await realtyApi.get('/properties/v3/detail', {
-      params: { property_id: propertyId }
-    });
+    const response = await rateLimiter.add(() => 
+      realtyApi.get('/properties/v3/detail', {
+        params: { property_id: propertyId }
+      })
+    );
     
+    if (response.error) {
+      throw response.error;
+    }
+
     const data = response.data?.data?.home;
     if (!data) {
       return {
@@ -173,7 +275,7 @@ export const getPropertyDetails = async (propertyId) => {
       version: VERSION
     };
   } catch (error) {
-    console.error('Error fetching property details:', error.response?.data || error.message);
+    console.error('Error fetching property details:', error);
     return {
       success: false,
       error: error.response?.data || error.message,
@@ -188,21 +290,23 @@ export const getLocationSuggestions = async (query) => {
   if (!query || query.length < 2) return [];
   
   try {
-    console.log('Fetching location suggestions for:', query); // Debug log
-    const response = await realtyApi.get('/locations/v2/auto-complete', {
-      params: {
-        input: query,  // Changed back to 'input' for v2 API
-        limit: 5
-      }
-    });
-    console.log('Location suggestions response:', response.data); // Debug log
+    const response = await rateLimiter.add(() => 
+      realtyApi.get('/locations/v2/auto-complete', {
+        params: {
+          input: query,
+          limit: 5
+        }
+      })
+    );
     
-    // v2 response structure: { autocomplete: [...] }
-    const suggestions = response.data?.autocomplete || [];
-    console.log('Processed suggestions:', suggestions); // Debug log
-    return suggestions;
+    if (response.error) {
+      throw response.error;
+    }
+
+    // v2 response structure is different from v3
+    return response.data?.autocomplete || [];
   } catch (error) {
-    console.error('Error fetching location suggestions:', error.response?.data || error.message);
+    console.error('Error fetching location suggestions:', error);
     return [];
   }
 }; 

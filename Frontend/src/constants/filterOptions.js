@@ -20,17 +20,17 @@ export const monthOptions = Array.from({ length: 12 }, (_, i) => ({
 
 export const bedroomOptions = [
   { value: 'studio', label: 'Studio' },
-  { value: '1br', label: '1 Bedroom' },
-  { value: '2br', label: '2 Bedrooms' },
-  { value: '3br+', label: '3+ Bedrooms' }
+  { value: '1br', label: '1 Bed' },
+  { value: '2br', label: '2 Beds' },
+  { value: '3br+', label: '3+ Beds' }
 ];
 
 export const numberOfBedroomsOptions = [
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
-  { value: '4', label: '4' },
-  { value: '5+', label: '5+' }
+  { value: '1', label: '1 Bed' },
+  { value: '2', label: '2 Beds' },
+  { value: '3', label: '3 Beds' },
+  { value: '4', label: '4 Beds' },
+  { value: '5+', label: '5+ Beds' }
 ];
 
 export const propertySizeOptions = [

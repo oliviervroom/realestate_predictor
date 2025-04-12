@@ -7,14 +7,9 @@ import SearchBar from '../../components/SearchBar/SearchBar';
 import FilterDropdown from '../../components/FilterDropdown';
 import RangeSlider from '../../components/RangeSlider';
 import PropertyCard from '../../components/PropertyCard/PropertyCard';
-import {
-  locationOptions,
-  seasonOptions,
-  monthOptions,
-  bedroomOptions,
-  numberOfBedroomsOptions,
-  propertySizeOptions
-} from '../../constants/filterOptions';
+import BedBathToggle from '../../components/BedBathToggle/BedBathToggle';
+import PriceToggle from '../../components/PriceToggle/PriceToggle';
+import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFootageToggle';
 import { VERSIONS } from '../../version';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import { searchProperties } from '../../services/realtyApi';
@@ -28,13 +23,12 @@ import StorageIcon from '@mui/icons-material/Storage';
 function Frame() {
   const [originalData, setOriginalData] = useState([]);
   const [modifiedData, setModifiedData] = useState([]);
-  const [location, setLocation] = useState('');
-  const [season, setSeason] = useState('');
-  const [month, setMonth] = useState('');
-  const [bedroom, setBedroom] = useState('studio');
-  const [numberOfBedrooms, setNumberOfBedrooms] = useState('');
-  const [propertySize, setPropertySize] = useState('small');
-  const [sqft, setSqft] = useState(2000);
+  const [searchQuery, setSearchQuery] = useState('Manchester, NH');
+  const [shouldSearch, setShouldSearch] = useState(true);
+  const [beds, setBeds] = useState(null);
+  const [baths, setBaths] = useState(null);
+  const [price, setPrice] = useState(null);
+  const [sqft, setSqft] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState(null);
@@ -98,31 +92,90 @@ function Frame() {
     return `${value.toLocaleString()} sqft`;
   };
 
-  const handleSearch = async (searchLocation) => {
-    console.log('Search location updated:', searchLocation);
-    setCurrentLocation(searchLocation);
-    try {
-      setIsLoading(true);
-      setError(null);
-      const result = await searchProperties(searchLocation);
-      setDebugInfo(result);
-
-      if (!result.success) {
-        throw new Error(result.errorMessage);
+  useEffect(() => {
+    const handleSearch = async () => {
+      if (!shouldSearch) {
+        return;
       }
 
-      const processedData = prepareObjects(result.processedData);
-      setOriginalData(processedData);
-      setModifiedData(processedData);
-    } catch (error) {
-      console.error('Error searching properties:', error);
-      setError(error.message || 'Failed to fetch properties. Please try again later.');
-      setOriginalData([]);
-      setModifiedData([]);
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(true);
+      setError(null);
+
+      const filters = {
+        beds,
+        baths,
+        price,
+        sqft,
+        location: searchQuery
+      };
+
+      try {
+        console.log('Current filters:', {
+          beds,
+          baths,
+          price,
+          sqft,
+          location: searchQuery
+        });
+
+        console.log('Sending search request:', { searchQuery, filters });
+
+        const result = await searchProperties(searchQuery, filters);
+        
+        if (!result.success) {
+          setError(result.errorMessage);
+          setModifiedData([]);
+          setApiDebugInfo({
+            requestData: filters,
+            responseData: null,
+            error: result.errorMessage,
+            debugSteps: result.debugSteps || []
+          });
+          setDebugInfo(result);
+        } else {
+          const processedData = prepareObjects(result.processedData);
+          setOriginalData(processedData);
+          setModifiedData(processedData);
+          setApiDebugInfo({
+            requestData: filters,
+            responseData: result.processedData,
+            error: null,
+            debugSteps: result.debugSteps || []
+          });
+          setDebugInfo(result);
+          if (result.processedData.length === 0) {
+            setError('No properties found matching your criteria');
+          }
+        }
+      } catch (err) {
+        setError('Failed to search properties');
+        setModifiedData([]);
+        setApiDebugInfo({
+          requestData: filters,
+          responseData: null,
+          error: err.message,
+          debugSteps: []
+        });
+      } finally {
+        setIsLoading(false);
+        setShouldSearch(false);
+      }
+    };
+
+    handleSearch();
+  }, [searchQuery, beds, baths, price, sqft, shouldSearch]);
+
+  const onSearch = (query) => {
+    setSearchQuery(query);
+    setShouldSearch(true);
   };
+
+  // Update filters
+  useEffect(() => {
+    if (beds || baths || price || sqft) {
+      setShouldSearch(true);
+    }
+  }, [beds, baths, price, sqft]);
 
   const handleCopyToClipboard = (text, label) => {
     navigator.clipboard.writeText(JSON.stringify(text, null, 2))
@@ -134,7 +187,7 @@ function Frame() {
   };
 
   return (
-    <Box sx={{ bgcolor: '#faf9f8', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
       <Header />
 
       <Box
@@ -162,54 +215,30 @@ function Frame() {
               }}
             >
               <SearchBar
-                onSearch={handleSearch}
+                onSearch={onSearch}
+                placeholder="Enter city and state (e.g., Boston, MA) or ZIP code"
               />
 
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
-                <FilterDropdown
-                  label="Location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  options={locationOptions}
+              <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <PriceToggle
+                  value={price}
+                  onChange={setPrice}
                 />
-                <FilterDropdown
-                  label="Season"
-                  value={season}
-                  onChange={(e) => setSeason(e.target.value)}
-                  options={seasonOptions}
+                <BedBathToggle
+                  bedsValue={beds}
+                  bathsValue={baths}
+                  onBedsChange={(value) => {
+                    setBeds(value);
+                    setShouldSearch(true);
+                  }}
+                  onBathsChange={(value) => {
+                    setBaths(value);
+                    setShouldSearch(true);
+                  }}
                 />
-                <FilterDropdown
-                  label="Month"
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  options={monthOptions}
-                />
-                <FilterDropdown
-                  label="Bedroom Category"
-                  value={bedroom}
-                  onChange={(e) => setBedroom(e.target.value)}
-                  options={bedroomOptions}
-                />
-                <FilterDropdown
-                  label="Number of Bedrooms"
-                  value={numberOfBedrooms}
-                  onChange={(e) => setNumberOfBedrooms(e.target.value)}
-                  options={numberOfBedroomsOptions}
-                />
-                <FilterDropdown
-                  label="Property Size Category"
-                  value={propertySize}
-                  onChange={(e) => setPropertySize(e.target.value)}
-                  options={propertySizeOptions}
-                />
-                <RangeSlider
+                <SquareFootageToggle
                   value={sqft}
-                  onChange={(e, newValue) => setSqft(newValue)}
-                  min={500}
-                  max={4000}
-                  step={100}
-                  formatLabel={formatSqft}
-                  label="Square Feet"
+                  onChange={setSqft}
                 />
               </Box>
             </Box>
@@ -251,6 +280,26 @@ function Frame() {
               <Typography>API Debug Information</Typography>
             </AccordionSummary>
             <AccordionDetails>
+              <Paper sx={{ p: 2, mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="h6">Filter Debug Steps:</Typography>
+                  <Tooltip title={copySuccess || "Copy to clipboard"}>
+                    <IconButton onClick={() => handleCopyToClipboard(debugInfo.debugSteps || [], 'Debug steps')}>
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box component="pre" sx={{ 
+                  bgcolor: '#f5f5f5', 
+                  p: 2, 
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  maxHeight: '200px'
+                }}>
+                  {JSON.stringify(debugInfo.debugSteps || [], null, 2)}
+                </Box>
+              </Paper>
+
               <Paper sx={{ p: 2, mb: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                   <Typography variant="h6">Request Data:</Typography>
@@ -302,10 +351,10 @@ function Frame() {
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            {currentLocation ? `Properties in ${currentLocation}` : 'Popular in Manchester'}
+            {searchQuery ? `Properties in ${searchQuery}` : 'Properties in Manchester, NH'}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            The most viewed and favorited homes in the past day.
+            Available properties for investment
           </Typography>
         </Box>
 
