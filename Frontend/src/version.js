@@ -12,7 +12,8 @@ export const versionDetails = {
       'Improved property image quality in PropertyInfo page',
       'Added high-resolution image support',
       'Enhanced image loading and fallback handling'
-    ]
+    ],
+    commit: 'd5a674e'
   },
   'v1.1.4': {
     title: 'UI Enhancements',
@@ -20,7 +21,8 @@ export const versionDetails = {
       'Fixed dynamic location-based heading updates',
       'Improved search functionality feedback',
       'Enhanced user interface responsiveness'
-    ]
+    ],
+    commit: 'e701d89'
   },
   'v1.1.3': {
     title: 'UI Improvements',
@@ -28,7 +30,8 @@ export const versionDetails = {
       'Moved API debug info below location heading',
       'Added dynamic location-based headings',
       'Improved homepage layout organization'
-    ]
+    ],
+    commit: 'e701d89'
   },
   'v1.1.2': {
     title: 'Changelog Enhancement',
@@ -36,20 +39,69 @@ export const versionDetails = {
       'Added explicit timezone indication (Eastern Time/Boston)',
       'Improved timestamp display in version history',
       'Enhanced version tracking with time information'
-    ]
+    ],
+    commit: 'e701d89'
   },
-  'v1.1.1': { date: '2025-04-12', time: '12:10 EDT' },
-  'v1.1.0': { date: '2025-04-12', time: '11:45 EDT' },
-  'v1.0.9': { date: '2024-04-12', time: '11:30 EDT' },
-  'v1.0.8': { date: '2024-04-12', time: '11:15 EDT' },
-  'v1.0.7': { date: '2024-04-12', time: '11:00 EDT' },
-  'v1.0.6': { date: '2024-04-12', time: '10:45 EDT' },
-  'v1.0.5': { date: '2024-04-12', time: '10:30 EDT' },
-  'v1.0.4': { date: '2024-04-12', time: '10:15 EDT' },
-  'v1.0.3': { date: '2024-04-12', time: '10:00 EDT' },
-  'v1.0.2': { date: '2024-04-12', time: '09:45 EDT' },
-  'v1.0.1': { date: '2025-04-12', time: '11:30 EDT' },
-  'v1.0.0': { date: '2025-04-12', time: '11:15 EDT' }
+  'v1.1.1': { 
+    date: '2025-04-12', 
+    time: '12:10 EDT',
+    commit: '2f2b075'
+  },
+  'v1.1.0': { 
+    date: '2025-04-12', 
+    time: '11:45 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.9': { 
+    date: '2024-04-12', 
+    time: '11:30 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.8': { 
+    date: '2024-04-12', 
+    time: '11:15 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.7': { 
+    date: '2024-04-12', 
+    time: '11:00 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.6': { 
+    date: '2024-04-12', 
+    time: '10:45 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.5': { 
+    date: '2024-04-12', 
+    time: '10:30 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.4': { 
+    date: '2024-04-12', 
+    time: '10:15 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.3': { 
+    date: '2024-04-12', 
+    time: '10:00 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.2': { 
+    date: '2024-04-12', 
+    time: '09:45 EDT',
+    commit: '2f2b075'
+  },
+  'v1.0.1': { 
+    date: '2025-04-12', 
+    time: '11:30 EDT',
+    commit: '25c70b2'
+  },
+  'v1.0.0': { 
+    date: '2025-04-12', 
+    time: '11:15 EDT',
+    commit: '25c70b2'
+  }
 };
 
 export const VERSION_HISTORY = {
