@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Container, Typography, Grid } from '@mui/material';
+import { Box, Container, Typography, Grid, Chip, Alert, Paper, Accordion, AccordionSummary, AccordionDetails, IconButton, Tooltip } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Header from '../../components/Header';
-import SearchBar from '../../components/SearchBar';
+import SearchBar from '../../components/SearchBar/SearchBar';
 import FilterDropdown from '../../components/FilterDropdown';
 import RangeSlider from '../../components/RangeSlider';
-import PropertyCard from '../../components/PropertyCard';
+import PropertyCard from '../../components/PropertyCard/PropertyCard';
 import {
   locationOptions,
   seasonOptions,
@@ -13,28 +15,13 @@ import {
   numberOfBedroomsOptions,
   propertySizeOptions
 } from '../../constants/filterOptions';
-
-const data = require('../../data/data.json')
-
-const prepareObjects = (obj) =>{
-  let arr = []
-  obj?.data?.home_search?.results?.forEach((each)=>{
-    arr.push({id: each?.property_id ?? '',
-    price: each?.list_price ?? 0,
-    beds: each?.description?.beds ?? 0,
-    baths: each?.description?.baths ?? 0,
-    sqft: each?.description?.sqft ?? '',
-    address: each?.location?.address?.line ?? '',
-    image: each?.primary_photo?.href ?? '',
-    location:each?.location ?? {},
-    comingSoon: true,})
-  })
-  return arr
-}
+import { VERSION } from '../../version';
+import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
+import { searchProperties } from '../../services/realtyApi';
 
 function Frame() {
-  const [originalData,setOriginalData] = useState([]) 
-  const [modifiedData,setModifiedData] = useState([]) 
+  const [originalData, setOriginalData] = useState([]);
+  const [modifiedData, setModifiedData] = useState([]);
   const [location, setLocation] = useState('');
   const [season, setSeason] = useState('');
   const [month, setMonth] = useState('');
@@ -42,36 +29,98 @@ function Frame() {
   const [numberOfBedrooms, setNumberOfBedrooms] = useState('');
   const [propertySize, setPropertySize] = useState('small');
   const [sqft, setSqft] = useState(2000);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [debugInfo, setDebugInfo] = useState(null);
+  const [copySuccess, setCopySuccess] = useState('');
 
-  useEffect(()=>{
-    //if api call exists you can write it here and pass the result as data to that function
-    const objects = prepareObjects(data)
-    setOriginalData(objects)
-    setModifiedData(objects) // so that every filter will happen on this
-  },[data])
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await searchProperties();
+        setDebugInfo(result);
+
+        if (!result.success) {
+          throw new Error(result.errorMessage);
+        }
+
+        const processedData = prepareObjects(result.processedData);
+        setOriginalData(processedData);
+        setModifiedData(processedData);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+        setError(error.message || 'Failed to fetch properties. Please try again later.');
+        setOriginalData([]);
+        setModifiedData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  const prepareObjects = (data) => {
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid data format: expected an array of properties');
+    }
+    
+    return data.map((each) => {
+      if (!each) return null;
+      
+      return {
+        id: each.property_id,
+        image: each.primary_photo || each.photos?.[0]?.href,
+        price: each.price,
+        beds: each.beds,
+        baths: each.baths,
+        sqft: each.sqft,
+        address: each.location?.address || {},
+        photos: each.photos || [],
+        description: each.description || {},
+        location: each.location || {},
+        raw_data: each.raw_data || each
+      };
+    }).filter(Boolean);
+  };
 
   const formatSqft = (value) => {
     return `${value.toLocaleString()} sqft`;
   };
 
+  const handleSearch = async (searchLocation) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const result = await searchProperties(searchLocation);
+      setDebugInfo(result);
 
-  const performSearch = (str) => {
-    const modified = str.toLowerCase();
-    const result = originalData.filter((each) => {
-      const address = each?.location?.address || {};
-      return (
-      address?.line?.toLowerCase().includes(modified) ||
-      address?.street_name?.toLowerCase().includes(modified) ||
-      address?.city?.toLowerCase().includes(modified) ||
-      address?.state?.toLowerCase().includes(modified) ||       // Matches "California"
-      address?.state_code?.toLowerCase().includes(modified) ||  // Matches "CA"
-      address?.postal_code?.toLowerCase().includes(modified)
-      );
-    });
-  
-    console.log("mactching property", result)
-  
-    return result || null;
+      if (!result.success) {
+        throw new Error(result.errorMessage);
+      }
+
+      const processedData = prepareObjects(result.processedData);
+      setOriginalData(processedData);
+      setModifiedData(processedData);
+    } catch (error) {
+      console.error('Error searching properties:', error);
+      setError(error.message || 'Failed to fetch properties. Please try again later.');
+      setOriginalData([]);
+      setModifiedData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCopyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(JSON.stringify(text, null, 2))
+      .then(() => {
+        setCopySuccess(`${label} copied!`);
+        setTimeout(() => setCopySuccess(''), 2000);
+      })
+      .catch(err => console.error('Failed to copy:', err));
   };
 
   return (
@@ -102,7 +151,9 @@ function Frame() {
                 borderTop: '1px solid rgba(255, 255, 255, 0.1)'
               }}
             >
-              <SearchBar performSearch={performSearch}/>
+              <SearchBar
+                onSearch={handleSearch}
+              />
 
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
                 <FilterDropdown
@@ -157,6 +208,72 @@ function Frame() {
       </Box>
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+          <Chip label={`Version ${VERSION}`} color="primary" />
+          {debugInfo && (
+            <Chip 
+              label={debugInfo.success ? "API Request Successful" : "API Request Failed"} 
+              color={debugInfo.success ? "success" : "error"} 
+            />
+          )}
+        </Box>
+
+        {/* Debug Information Accordion */}
+        {debugInfo && (
+          <Accordion sx={{ mb: 3 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography>API Debug Information</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Paper sx={{ p: 2, mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="h6">Request Data:</Typography>
+                  <Tooltip title={copySuccess || "Copy to clipboard"}>
+                    <IconButton onClick={() => handleCopyToClipboard(debugInfo.requestData, 'Request data')}>
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box component="pre" sx={{ 
+                  bgcolor: '#f5f5f5', 
+                  p: 2, 
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  maxHeight: '200px'
+                }}>
+                  {JSON.stringify(debugInfo.requestData, null, 2)}
+                </Box>
+              </Paper>
+              
+              <Paper sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="h6">Response Data:</Typography>
+                  <Tooltip title={copySuccess || "Copy to clipboard"}>
+                    <IconButton onClick={() => handleCopyToClipboard(debugInfo.success ? debugInfo.responseData : debugInfo.error, 'Response data')}>
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box component="pre" sx={{ 
+                  bgcolor: '#f5f5f5', 
+                  p: 2, 
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  maxHeight: '400px'
+                }}>
+                  {JSON.stringify(debugInfo.success ? debugInfo.responseData : debugInfo.error, null, 2)}
+                </Box>
+              </Paper>
+
+              {debugInfo.errorSource && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  Error Source: {debugInfo.errorSource}
+                </Alert>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        )}
+
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
             Popular in Manchester
@@ -166,40 +283,62 @@ function Frame() {
           </Typography>
         </Box>
 
-        <Grid container spacing={3}>
-  {modifiedData.slice(0, 4).map((property) => (
-    <Grid item xs={12} sm={6} md={4} key={property.id}>
-      <PropertyCard property={property} />
-    </Grid>
-  ))}
-</Grid>
+        {isLoading ? (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography>Loading properties...</Typography>
+          </Box>
+        ) : error ? (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        ) : modifiedData.length === 0 ? (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            No properties found. Try adjusting your search criteria.
+          </Alert>
+        ) : (
+          <>
+            <Grid container spacing={3}>
+              {modifiedData.slice(0, 4).map((property) => (
+                <Grid item xs={12} sm={6} md={4} key={property.id}>
+                  <PropertyCard property={property} />
+                </Grid>
+              ))}
+            </Grid>
 
-{modifiedData.length > 4 && (
-  <Box sx={{ textAlign: 'center', mt: 3 }}>
-    <Typography variant="body2" sx={{ mb: 1 }}>
-      Showing top 4 results only
-    </Typography>
-    <Box
-      onClick={() =>
-        window.location.href = '/property-listings' // Or use navigate if available here
-      }
-      sx={{
-        display: 'inline-block',
-        cursor: 'pointer',
-        color: '#c82021',
-        border: '1px solid #c82021',
-        borderRadius: '4px',
-        px: 3,
-        py: 1,
-        fontWeight: 500,
-        '&:hover': { bgcolor: '#c82021', color: '#fff' },
-      }}
-    >
-      See All Properties
-    </Box>
-  </Box>
-)}
+            {modifiedData.length > 4 && (
+              <Box sx={{ textAlign: 'center', mt: 3 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Showing top 4 results only
+                </Typography>
+                <Box
+                  onClick={() =>
+                    window.location.href = '/property-listings' // Or use navigate if available here
+                  }
+                  sx={{
+                    display: 'inline-block',
+                    cursor: 'pointer',
+                    color: '#c82021',
+                    border: '1px solid #c82021',
+                    borderRadius: '4px',
+                    px: 3,
+                    py: 1,
+                    fontWeight: 500,
+                    '&:hover': { bgcolor: '#c82021', color: '#fff' },
+                  }}
+                >
+                  See All Properties
+                </Box>
+              </Box>
+            )}
+          </>
+        )}
       </Container>
+
+      <ErrorMessage 
+        message={error} 
+        open={!!error} 
+        onClose={() => setError(null)} 
+      />
     </Box>
   );
 }

@@ -1,91 +1,74 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, TextField, Paper, List, ListItem, ListItemText } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { searchProperties } from '../../services/realtyApi'; // Use real API // your local fallback dataset
+import { Box, TextField, Paper, List, ListItem, ListItemText, IconButton } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import { getLocationSuggestions } from '../../services/realtyApi';
 import Loader from '../Loader/Loader';
 import debounce from 'lodash.debounce';
 
-
-const SearchBar = () => {
+const SearchBar = ({ onSearch }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
 
+  const handleSearch = useCallback(() => {
+    if (searchTerm.trim()) {
+      onSearch(searchTerm);
+    }
+  }, [searchTerm, onSearch]);
 
-  const handleSearch = async () => {
-    if (!searchTerm) return;
-    setLoading(true);
-    try {
-      const matches = await performSearch(searchTerm);
-      setTimeout(() => {
-        setLoading(false);
-        if (matches.length === 1) {
-          navigate('/property-info', { state: matches[0] });
-        } else {
-          navigate('/property-listings', { state: matches });
-        }
-      }, 2000); // Optional delay to make loader visible
-    } catch (error) {
-      setLoading(false);
-      alert("Search failed.");
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      handleSearch();
     }
   };
 
-  const performSearch = async (input) => {
-    return await searchProperties(input);
-  };
-
-  // const handleChange = async (e) => {
-  //   const value = e.target.value;
-  //   setSearchTerm(value);
-  //   setAnchorEl(e.currentTarget);
-  
-  //   if (value.length > 2) {
-  //     const results = await performSearch(value); // await the async function
-  //     setSuggestions(results.slice(0, 5)); // only call slice on actual array
-  //   } else {
-  //     setSuggestions([]);
-  //   }
-  // };
   const debouncedSearch = useCallback(
     debounce(async (value) => {
-      const results = await performSearch(value);
-      setSuggestions(results.slice(0, 5));
-    }, 1000), // waits 1000ms after typing stops
+      if (value.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const results = await getLocationSuggestions(value);
+        setSuggestions(results.slice(0, 5));
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500),
     []
   );
-  
+
   const handleChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     setAnchorEl(e.currentTarget);
-  
-    if (value.length > 2) {
-      debouncedSearch(value); // Debounced API call
-    } else {
-      setSuggestions([]);
-    }
+    debouncedSearch(value);
   };
 
-  const handleSuggestionClick = (item) => {
-    setSearchTerm(item?.location?.address?.line || '');
+  const handleSuggestionClick = (suggestion) => {
+    const locationString = `${suggestion.city}, ${suggestion.state_code}`;
+    setSearchTerm(locationString);
     setSuggestions([]);
-    navigate('/property-info', { state: item });
+    onSearch(locationString);
   };
 
-  {loading && <Loader text= "Searching..." /> }
   return (
-    
     <Box sx={{ position: 'relative', width: '100%' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
           fullWidth
           value={searchTerm}
           onChange={handleChange}
-          placeholder="Enter an address, neighborhood, city, or ZIP code"
+          onKeyPress={handleKeyPress}
+          placeholder="Enter a city and state (e.g., Manchester, NH)"
           variant="outlined"
           sx={{
             '& .MuiOutlinedInput-root': {
@@ -105,17 +88,23 @@ const SearchBar = () => {
             },
           }}
         />
-        <Button
-          variant="contained"
+        <IconButton
           onClick={handleSearch}
-          disabled={loading}
-          sx={{ bgcolor: '#c82021', minWidth: 'auto', px: 2 }}
+          sx={{
+            backgroundColor: '#c82021',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#a51a1b'
+            }
+          }}
         >
           <SearchIcon />
-        </Button>
+        </IconButton>
       </Box>
 
-      {suggestions.length > 0 && (
+      {isLoading && <Loader text="Loading suggestions..." />}
+
+      {!isLoading && suggestions.length > 0 && (
         <Paper
           sx={{
             position: 'absolute',
@@ -130,18 +119,18 @@ const SearchBar = () => {
           }}
         >
           <List dense>
-            {suggestions.map((item, index) => (
+            {suggestions.map((suggestion) => (
               <ListItem
-                key={index}
+                key={suggestion._id}
                 button
-                onClick={() => handleSuggestionClick(item)}
+                onClick={() => handleSuggestionClick(suggestion)}
                 sx={{
                   '&:hover': { backgroundColor: '#f2f2f2' },
                 }}
               >
                 <ListItemText
-                  primary={item?.location?.address?.line || 'No address'}
-                  secondary={`${item?.location?.address?.city}, ${item?.location?.address?.state} ${item?.location?.address?.postal_code}`}
+                  primary={`${suggestion.city}, ${suggestion.state_code}`}
+                  secondary={suggestion.counties?.[0]?.name || ''}
                 />
               </ListItem>
             ))}

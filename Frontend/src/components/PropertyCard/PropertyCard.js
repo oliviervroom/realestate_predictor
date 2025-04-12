@@ -1,53 +1,82 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import {
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Box,
+  Chip
+} from '@mui/material';
+import { LocationOn, Bed, Bathtub, SquareFoot } from '@mui/icons-material';
 
 const PropertyCard = ({ property }) => {
-  // Handle image source
-  const photo =
-    property?.photos || property?.image || property?.primary_photo?.href || '/placeholder.png';
+  const navigate = useNavigate();
 
-  // Handle price
-  const price =
-    property?.price ||
-    property?.list_price ||
-    property?.listPrice; // fallback if manually set elsewhere
-
-  // Handle beds, baths, sqft
-  const beds = property?.beds || property?.description?.beds;
-  const baths = property?.baths || property?.description?.baths;
-  const sqft = property?.sqft || property?.description?.sqft;
-
-  // Address
-  const address = property?.location?.address;
+  const handleClick = () => {
+    navigate('/property-info', { state: property });
+  };
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 3 }}>
-      <Box
+    <Card 
+      sx={{ 
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column',
+        cursor: 'pointer',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+        }
+      }}
+      onClick={handleClick}
+    >
+      <CardMedia
         component="img"
-        src={photo}
+        height="200"
+        image={property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image || '/genbcs-24082644-0-jpg.png'}
         alt="Property"
-        sx={{ width: '100%', height: 180, objectFit: 'cover', borderTopLeftRadius: 4, borderTopRightRadius: 4 }}
         onError={(e) => {
-          e.target.src = '/placeholder.png';
+          e.target.src = '/genbcs-24082644-0-jpg.png';
         }}
       />
-      <CardContent>
-        <Typography variant="h6" fontWeight="bold">
-          {price ? `$${price.toLocaleString()}` : 'Price not available'}
+      <CardContent sx={{ flexGrow: 1 }}>
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          {(() => {
+            const price = property?.price || property?.list_price || property?.estimate?.estimate;
+            return price ? `$${price.toLocaleString()}` : 'Price not available';
+          })()}
+        </Typography>
+        
+        <Typography variant="subtitle1" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+          <LocationOn sx={{ mr: 0.5, color: 'text.secondary' }} />
+          {property?.address?.line || property?.location?.address?.line || 'Address not available'}
         </Typography>
 
-        <Typography variant="body2" color="text.secondary">
-          {beds != null ? `${beds} beds` : 'N/A beds'} •{' '}
-          {baths != null ? `${baths} baths` : 'N/A baths'} •{' '}
-          {sqft != null ? `${sqft.toLocaleString()} sq ft` : 'N/A sq ft'}
-        </Typography>
-
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          {address?.line}, {address?.city}, {address?.state} {address?.postal_code}
-        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
+          <Chip
+            icon={<Bed />}
+            label={`${property?.beds || property?.description?.beds || 0} beds`}
+            size="small"
+            variant="outlined"
+          />
+          <Chip
+            icon={<Bathtub />}
+            label={`${property?.baths || property?.description?.baths || 0} baths`}
+            size="small"
+            variant="outlined"
+          />
+          <Chip
+            icon={<SquareFoot />}
+            label={`${(property?.sqft || property?.description?.sqft || 0).toLocaleString()} sqft`}
+            size="small"
+            variant="outlined"
+          />
+        </Box>
       </CardContent>
     </Card>
   );
 };
 
-export default React.memo(PropertyCard);
+export default PropertyCard;

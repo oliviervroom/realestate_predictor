@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "build": "3.23.180"
+  },
+  "autocomplete": [
+    {
+      "area_type": "city",
+      "_id": "city:ny_new-york",
+      "_score": 23.035315,
+      "city": "New York",
+      "state_code": "NY",
+      "counties": [
+        {
+          "name": "Queens",
+          "fips": "36081",
+          "state_code": "NY"
+        },
+        {
+          "name": "Kings",
+          "fips": "36047",
+          "state_code": "NY"
+        },
+        {
+          "name": "Richmond",
+          "fips": "36085",
+          "state_code": "NY"
+        },
+        {
+          "name": "Bronx",
+          "fips": "36005",
+          "state_code": "NY"
+        },
+        {
+          "name": "New York",
+          "fips": "36061",
+          "state_code": "NY"
+        }
+      ],
+      "country": "USA",
+      "centroid": {
+        "lon": -73.9386968,
+        "lat": 40.6634682
+      },
+      "slug_id": "New-York_NY",
+      "geo_id": "a5cac742-26a8-5870-b961-472ec6f9d824",
+      "county_needed_for_uniq": false
+    },
+    {
+      "area_type": "city",
+      "_id": "city:ny_manhattan",
+      "_score": 22.493696,
+      "city": "Manhattan",
+      "state_code": "NY",
+      "counties": [
+        {
+          "name": "New York",
+          "fips": "36061",
+          "state_code": "NY"
+        }
+      ],
+      "country": "USA",
+      "centroid": {
+        "lon": -73.9701871,
+        "lat": 40.7766419
+      },
+      "slug_id": "Manhattan_NY",
+      "geo_id": "e87a8b91-b532-5d20-a050-0551631a2c79",
+      "county_needed_for_uniq": false
+    },
+    {
+      "area_type": "city",
+      "_id": "city:ny_new-york-mills",
+      "_score": 22.100761,
+      "city": "New York Mills",
+      "state_code": "NY",
+      "counties": [
+        {
+          "name": "Oneida",
+          "fips": "36065",
+          "state_code": "NY"
+        }
+      ],
+      "country": "USA",
+      "centroid": {
+        "lon": -75.2931141,
+        "lat": 43.1007037
+      },
+      "slug_id": "New-York-Mills_NY",
+      "geo_id": "45f53d11-3a2c-5b81-8fed-7dd7f735ccd9",
+      "county_needed_for_uniq": false
+    },
+    {
+      "area_type": "city",
+      "_id": "city:mn_new-york-mills",
+      "_score": 22.080208,
+      "city": "New York Mills",
+      "state_code": "MN",
+      "counties": [
+        {
+          "name": "Otter Tail",
+          "fips": "27111",
+          "state_code": "MN"
+        }
+      ],
+      "country": "USA",
+      "centroid": {
+        "lon": -95.3727804,
+        "lat": 46.5196303
+      },
+      "slug_id": "New-York-Mills_MN",
+      "geo_id": "559960d6-8da6-5e37-a7cf-3859260b51e3",
+      "county_needed_for_uniq": false
+    },
+    {
+      "area_type": "school",
+      "_id": "school:0751622721",
+      "_score": 21.944002,
+      "school_id": "0751622721",
+      "school": "New York Hebrew",
+      "line": "121 West 19th Street",
+      "city": "New York",
+      "postal_code": "10011",
+      "state_code": "NY",
+      "country": "USA",
+      "centroid": {
+        "lon": -73.995705,
+        "lat": 40.741074
+      },
+      "has_catchment": false,
+      "slug_id": "New-York-Hebrew-0751622721",
+      "city_slug_id": "New-York_NY"
+    },
+    {
+      "area_type": "school",
+      "_id": "school:0751687101",
+      "_score": 21.892601,
+      "school_id": "0751687101",
+      "school": "New York International School",
+      "line": "4 East 90th Street",
+      "city": "New York",
+      "postal_code": "10128",
+      "state_code": "NY",
+      "country": "USA",
+      "centroid": {
+        "lon": -73.958038,
+        "lat": 40.783695
+      },
+      "has_catchment": false,
+      "slug_id": "New-York-International-School-0751687101",
+      "city_slug_id": "New-York_NY"
+    },
+    {
+      "area_type": "school",
+      "_id": "school:0751685001",
+      "_score": 21.831419,
+      "school_id": "0751685001",
+      "school": "New York State School For The Blind",
+      "line": "2A Richmond Avenue",
+      "city": "Batavia",
+      "postal_code": "14020",
+      "state_code": "NY",
+      "country": "USA",
+      "centroid": {
+        "lon": -78.184921,
+        "lat": 43.006557
+      },
+      "has_catchment": false,
+      "slug_id": "New-York-State-School-For-The-Blind-0751685001",
+      "city_slug_id": "Batavia_NY"
+    },
+    {
+      "area_type": "school",
+      "_id": "school:0751470731",
+      "_score": 21.739353,
+      "school_id": "0751470731",
+      "school": "New York Mills Elementary School",
+      "line": "1 Marauder Boulevard",
+      "city": "New York Mills",
+      "postal_code": "13417",
+      "state_code": "NY",
+      "country": "USA",
+      "centroid": {
+        "lon": -75.291348,
+        "lat": 43.092457
+      },
+      "has_catchment": true,
+      "slug_id": "New-York-Mills-Elementary-School-0751470731",
+      "city_slug_id": "New-York-Mills_NY"
+    },
+    {
+      "area_type": "school",
+      "_id": "school:0751470741",
+      "_score": 21.689621,
+      "school_id": "0751470741",
+      "school": "New York Mills Junior Senior High School",
+      "line": "1 Marauder Boulevard",
+      "city": "New York Mills",
+      "postal_code": "13417",
+      "state_code": "NY",
+      "country": "USA",
+      "centroid": {
+        "lon": -75.291134,
+        "lat": 43.092351
+      },
+      "has_catchment": true,
+      "slug_id": "New-York-Mills-Junior-Senior-High-School-0751470741",
+      "city_slug_id": "New-York-Mills_NY"
+    },
+    {
+      "area_type": "school",
+      "_id": "school:0751686901",
+      "_score": 21.64717,
+      "school_id": "0751686901",
+      "school": "New York French American Charter School",
+      "line": "311 West 120th Street",
+      "city": "New York",
+      "postal_code": "10027",
+      "state_code": "NY",
+      "country": "USA",
+      "centroid": {
+        "lon": -73.954211,
+        "lat": 40.807582
+      },
+      "has_catchment": false,
+      "slug_id": "New-York-French-American-Charter-School-0751686901",
+      "city_slug_id": "New-York_NY"
+    }
+  ]
+}

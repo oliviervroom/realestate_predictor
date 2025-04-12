@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Box, Typography, Container, Card, CardContent, Slider} from '@mui/material';
+  Box, Typography, Container, Card, CardContent, Slider, Chip, Alert
+} from '@mui/material';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import Header from '../../components/Header';
 import MapComponent from './MapComponent';
+import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
+import { VERSION } from '../../version';
 
 const PropertyInfo = () => {
   const location = useLocation();
@@ -14,73 +17,136 @@ const PropertyInfo = () => {
   const allProperties = location?.state?.allProperties || [];
   const currentPropertyId = property?.property_id;
 
-  const baseRent = property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045);
-  const [adjustedRent, setAdjustedRent] = useState(baseRent);
+  const [error, setError] = useState(null);
+  const [dataErrors, setDataErrors] = useState([]);
+  const [adjustedRent, setAdjustedRent] = useState(
+    property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045)
+  );
 
+  useEffect(() => {
+    // Validate required data
+    const errors = [];
+    if (!property) {
+      errors.push('No property data available');
+    } else {
+      if (!property.price && !property.list_price && !property.estimate?.estimate) {
+        errors.push('Price information is missing');
+      }
+      if (!property.beds && property.beds !== 0) {
+        errors.push('Number of bedrooms is missing');
+      }
+      if (!property.baths && property.baths !== 0) {
+        errors.push('Number of bathrooms is missing');
+      }
+      if (!property.sqft) {
+        errors.push('Square footage information is missing');
+      }
+      if (!property.address?.line || !property.address?.city || !property.address?.state_code) {
+        errors.push('Complete address information is missing');
+      }
+    }
+    setDataErrors(errors);
+  }, [property]);
+
+  if (!property) {
+    return (
+      <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
+        <Header />
+        <Container>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Chip label={`Version ${VERSION}`} color="primary" />
+          </Box>
+          <Alert severity="error" sx={{ mt: 4 }}>
+            No property data found. Please return to the home page and try again.
+          </Alert>
+        </Container>
+      </Box>
+    );
+  }
+
+  const baseRent = property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045);
   const priceTrendData = generatePriceTrendData(property);
 
   const nearbyProperties = allProperties.filter(
     (p) => p?.property_id !== currentPropertyId &&
-    p?.location?.address?.coordinate?.lat && p?.location?.address?.coordinate?.lon
+    p?.address?.lat && p?.address?.long
   );
 
-  if (!property) {
-    return (
-      <Container>
-        <Typography variant="h6" sx={{ mt: 4 }}>No property data found.</Typography>
-      </Container>
-    );
-  }
-
   function generatePriceTrendData(property) {
-    const soldPrice = property?.last_sold_price;
-    const estimate = property?.estimate?.estimate;
-    const listPrice = property?.list_price;
-    if (soldPrice && estimate && listPrice) {
-      return [
-        { date: '2020', value: soldPrice * 0.95 },
-        { date: '2021', value: soldPrice },
-        { date: '2022', value: estimate },
-        { date: '2023', value: estimate * 1.03 },
-        { date: '2024', value: listPrice }
-      ];
+    try {
+      const soldPrice = property?.last_sold_price;
+      const estimate = property?.estimate?.estimate;
+      const listPrice = property?.list_price;
+      if (soldPrice && estimate && listPrice) {
+        return [
+          { date: '2020', value: soldPrice * 0.95 },
+          { date: '2021', value: soldPrice },
+          { date: '2022', value: estimate },
+          { date: '2023', value: estimate * 1.03 },
+          { date: '2024', value: listPrice }
+        ];
+      }
+      return [];
+    } catch (error) {
+      setError('Error generating price trend data');
+      return [];
     }
-    return [];
   }
 
   const coordinates = {
-    lat: property?.location?.address?.coordinate?.lat || 37.7749,
-    lng: property?.location?.address?.coordinate?.lon || -122.4194
+    lat: property?.address?.lat || property?.location?.address?.coordinate?.lat || 37.7749,
+    lng: property?.address?.long || property?.location?.address?.coordinate?.lon || -122.4194
   };
 
   return (
     <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
       <Header />
       <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Chip label={`Version ${VERSION}`} color="primary" />
+        </Box>
+
+        {dataErrors.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Some property information is missing or incomplete:
+            </Typography>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+              {dataErrors.map((err, index) => (
+                <li key={index}>{err}</li>
+              ))}
+            </ul>
+          </Alert>
+        )}
+
         {/* Basic Info */}
         <Card sx={{ mb: 4 }}>
           <Box
             component="img"
-            src={property?.primary_photo?.href || '/genbcs-24082644-0-jpg.png'}
+            src={property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image || '/genbcs-24082644-0-jpg.png'}
             alt="Property"
             sx={{ width: '100%', height: 400, objectFit: 'cover' }}
+            onError={(e) => {
+              e.target.src = '/genbcs-24082644-0-jpg.png';
+              setError('Failed to load property image');
+            }}
           />
           <CardContent>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
               {(() => {
-                const price =
-                  property?.price ||
-                  property?.list_price ||
-                  property?.listPrice ||
-                  property?.estimate?.estimate;
+                const price = property?.price || property?.list_price || property?.estimate?.estimate;
                 return price ? `$${price.toLocaleString()}` : 'Price not available';
               })()}
             </Typography>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              {property?.location?.address?.line}, {property?.location?.address?.city}, {property?.location?.address?.state}
+              {[
+                property?.address?.line,
+                property?.address?.city,
+                property?.address?.state_code
+              ].filter(Boolean).join(', ') || 'Address not available'}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              {property?.description?.beds || 0} beds • {property?.description?.baths || 0} baths • {property?.description?.sqft?.toLocaleString() || '-'} sqft
+              {property?.beds || property?.description?.beds || '0'} beds • {property?.baths || property?.description?.baths || '0'} baths • {(property?.sqft || property?.description?.sqft || '0').toLocaleString()} sqft
             </Typography>
           </CardContent>
         </Card>
@@ -89,7 +155,9 @@ const PropertyInfo = () => {
         <Box sx={{ mb: 6 }}>
           <Typography variant="h5" fontWeight="bold" gutterBottom>About this home</Typography>
           <Typography variant="body1" color="text.secondary">
-            {property?.description?.text || "Details about this property are currently unavailable."}
+            {typeof property?.description === 'string' 
+              ? property.description 
+              : "Details about this property are currently unavailable."}
           </Typography>
         </Box>
 
@@ -194,14 +262,17 @@ const PropertyInfo = () => {
         <Box sx={{ mb: 6 }}>
           <Typography variant="h5" fontWeight="bold">Location on Map</Typography>
           <MapComponent
-            center={{
-              lat: property?.location?.address?.coordinate?.lat,
-              lng: property?.location?.address?.coordinate?.lon
-            }}
-            price={ property?.price || property?.list_price || property?.listPrice || property?.estimate?.estimate}
+            center={coordinates}
+            price={property?.price || property?.list_price || property?.estimate?.estimate}
             nearbyProperties={nearbyProperties}
           />
         </Box>
+
+        <ErrorMessage 
+          message={error} 
+          open={!!error} 
+          onClose={() => setError(null)} 
+        />
       </Container>
     </Box>
   );

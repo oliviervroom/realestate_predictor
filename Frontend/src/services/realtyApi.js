@@ -1,56 +1,122 @@
 import axios from 'axios';
+import { VERSION } from '../version';
 
 const realtyApi = axios.create({
   baseURL: 'https://realty-in-us.p.rapidapi.com',
   headers: {
     'X-RapidAPI-Key': process.env.REACT_APP_RAPIDAPI_KEY,
-    'X-RapidAPI-Host': 'realty-in-us.p.rapidapi.com'
+    'X-RapidAPI-Host': 'realty-in-us.p.rapidapi.com',
+    'Content-Type': 'application/json'
   }
 });
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-export const searchProperties = async (query) => {
-  try {
-    await delay(300);
-    const isZip = /^\d{5}$/.test(query.trim());
+const API_KEY = process.env.REACT_APP_RAPIDAPI_KEY;
 
-    const payload = {
+export const searchProperties = async (location = 'Manchester, NH') => {
+  try {
+    await delay(300); // Keep consistent response timing
+    const query = location.trim();
+    const isZip = /^\d{5}$/.test(query);
+
+    // Build request data based on search type
+    const requestData = {
       limit: 20,
       offset: 0,
-      sort: 'newest',
-      ...(isZip
-        ? { postal_code: query.trim() }
-        : { city: query.trim() })
+      status: ['for_sale', 'ready_to_build'],
+      sort: {
+        direction: 'desc',
+        field: 'list_date'
+      }
     };
 
-    const response = await realtyApi.post('/properties/v3/list', payload);
+    // Add location parameters based on search type
+    if (isZip) {
+      requestData.postal_code = query;
+    } else {
+      const [city, state_code] = query.split(',').map(part => part.trim());
+      if (!city || !state_code) {
+        return {
+          success: false,
+          errorSource: 'Client Validation',
+          errorMessage: 'Please provide both city and state (e.g., "Boston, MA")',
+          version: VERSION
+        };
+      }
+      requestData.city = city;
+      requestData.state_code = state_code;
+    }
 
-    const results = response?.data?.data?.home_search?.results || [];
+    console.log('API Request:', requestData);
+    const response = await realtyApi.post('/properties/v3/list', requestData);
+    console.log('API Response:', response.data);
 
-//Katts model expects: 
-//"CITY", "NEIGHBORHOOD", "ZIP_CODE", "SEASONAL_CONTEXT",
-//"PROP_TYPE", "SQUARE_FEET", "LOT_SIZE", "NO_BEDROOMS", "TOTAL_BATHS",
-//"TOTAL_PARKING_RN", "FURNISHED_RN", "PETS_ALLOWED_RN",
-//"SEC_DEPOSIT_RN", "TERM_OF_RENTAL_RN", "RENT_FEE_INCLUDES_RN", "RENTAL_TERMS_RN",
-//"DAYS_ON_MARKET", "MLS_COMP_BUILDING_ID", "COMP_STATUS",
-//"LIST_PRICE", "Predicted_Rent"
+    if (response.data?.errors) {
+      return {
+        success: false,
+        requestData,
+        error: response.data,
+        errorSource: 'Realty API',
+        errorMessage: response.data.errors[0]?.data?.message || 'API Error',
+        version: VERSION
+      };
+    }
 
-    return results.map((item) => ({
+    const results = response.data?.data?.home_search?.results;
+    if (!Array.isArray(results)) {
+      return {
+        success: false,
+        requestData,
+        error: response.data,
+        errorSource: 'Data Processing',
+        errorMessage: 'Invalid response format: missing or invalid results array',
+        version: VERSION
+      };
+    }
+
+    const processedResults = results.map(item => ({
       property_id: item?.property_id,
-      price: item?.list_price,
-      beds: item?.description?.beds,
-      baths: item?.description?.baths,
-      sqft: item?.description?.sqft,
-      photos: item?.primary_photo?.href,
-      location: item?.location,
-      description: item?.description,
-      rental_estimate: item?.rental_estimate,
-      estimate: item?.estimate?.estimate
+      price: item?.list_price || item?.price,
+      beds: item?.description?.beds || item?.beds,
+      baths: item?.description?.baths || item?.baths,
+      sqft: item?.description?.sqft || item?.sqft,
+      photos: item?.photos || [],
+      primary_photo: item?.primary_photo?.href || item?.photos?.[0]?.href,
+      location: {
+        address: {
+          line: item?.location?.address?.line || item?.address?.line,
+          city: item?.location?.address?.city || item?.address?.city,
+          state_code: item?.location?.address?.state_code || item?.address?.state_code,
+          postal_code: item?.location?.address?.postal_code || item?.address?.postal_code,
+          lat: item?.location?.address?.coordinate?.lat,
+          long: item?.location?.address?.coordinate?.lon
+        }
+      },
+      description: item?.description || {},
+      raw_data: item // Keep raw data for debugging
     }));
+
+    return {
+      success: true,
+      requestData,
+      responseData: response.data,
+      processedData: processedResults,
+      version: VERSION
+    };
   } catch (error) {
-    console.error('Error searching properties:', error.response?.data || error.message);
-    return [];
+    console.error('Error:', error.response?.data || error.message);
+    return {
+      success: false,
+      requestData: error.config?.data ? JSON.parse(error.config.data) : {},
+      error: error.response?.data || error.message,
+      errorSource: 'Network/Server',
+      errorMessage: error.response?.data?.errors?.[0]?.data?.message || 
+                   error.response?.data?.message || 
+                   error.message ||
+                   'Failed to fetch properties',
+      version: VERSION
+    };
   }
 };
 
@@ -59,9 +125,55 @@ export const getPropertyDetails = async (propertyId) => {
     const response = await realtyApi.get('/properties/v2/detail', {
       params: { property_id: propertyId }
     });
-    return response.data;
+    
+    const data = response.data;
+    return {
+      success: true,
+      property: {
+        property_id: data?.property_id,
+        price: data?.list_price || data?.price,
+        beds: data?.description?.beds || data?.beds,
+        baths: data?.description?.baths || data?.baths,
+        sqft: data?.description?.sqft || data?.sqft,
+        photos: data?.photos || [],
+        primary_photo: data?.primary_photo?.href || data?.photos?.[0]?.href,
+        location: {
+          address: {
+            line: data?.location?.address?.line || data?.address?.line,
+            city: data?.location?.address?.city || data?.address?.city,
+            state_code: data?.location?.address?.state_code || data?.address?.state_code,
+            postal_code: data?.location?.address?.postal_code || data?.address?.postal_code,
+            lat: data?.location?.address?.coordinate?.lat,
+            long: data?.location?.address?.coordinate?.lon
+          }
+        },
+        description: data?.description || {},
+        raw_data: data
+      },
+      version: VERSION
+    };
   } catch (error) {
-    console.error('Error fetching property details:', error);
-    return null;
+    console.error('Error fetching property details:', error.response?.data || error.message);
+    return {
+      success: false,
+      error: error.response?.data || error.message,
+      errorMessage: 'Failed to fetch property details',
+      version: VERSION
+    };
+  }
+};
+
+// For search suggestions as user types
+export const getLocationSuggestions = async (query) => {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    const response = await realtyApi.get('/locations/v2/auto-complete', {
+      params: { input: query }
+    });
+    return response.data?.autocomplete || [];
+  } catch (error) {
+    console.error('Error fetching location suggestions:', error.response?.data || error.message);
+    return [];
   }
 }; 
