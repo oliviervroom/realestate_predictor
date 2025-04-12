@@ -1,11 +1,20 @@
 // Working version - only updated when changes are confirmed working
-export const WORKING_VERSION = '1.1.5';
+export const WORKING_VERSION = '1.1.6';
 
 // Edit version - increments with each edit, resets when working version updates
 export const EDIT_VERSION = 1;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.6': {
+    title: 'Navigation Enhancement',
+    details: [
+      'Made logo clickable in header',
+      'Added homepage navigation when clicking logo',
+      'Improved header component accessibility'
+    ],
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
+  },
   'v1.1.5': {
     title: 'Image Quality Enhancement',
     details: [
@@ -13,7 +22,7 @@ export const versionDetails = {
       'Added high-resolution image support',
       'Enhanced image loading and fallback handling'
     ],
-    commit: 'd5a674e'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
   },
   'v1.1.4': {
     title: 'UI Enhancements',
@@ -22,7 +31,7 @@ export const versionDetails = {
       'Improved search functionality feedback',
       'Enhanced user interface responsiveness'
     ],
-    commit: 'e701d89'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/e701d89'
   },
   'v1.1.3': {
     title: 'UI Improvements',
@@ -31,7 +40,7 @@ export const versionDetails = {
       'Added dynamic location-based headings',
       'Improved homepage layout organization'
     ],
-    commit: 'e701d89'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/e701d89'
   },
   'v1.1.2': {
     title: 'Changelog Enhancement',
@@ -40,71 +49,72 @@ export const versionDetails = {
       'Improved timestamp display in version history',
       'Enhanced version tracking with time information'
     ],
-    commit: 'e701d89'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/e701d89'
   },
   'v1.1.1': { 
     date: '2025-04-12', 
     time: '12:10 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.1.0': { 
     date: '2025-04-12', 
     time: '11:45 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.9': { 
     date: '2024-04-12', 
     time: '11:30 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.8': { 
     date: '2024-04-12', 
     time: '11:15 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.7': { 
     date: '2024-04-12', 
     time: '11:00 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.6': { 
     date: '2024-04-12', 
     time: '10:45 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.5': { 
     date: '2024-04-12', 
     time: '10:30 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.4': { 
     date: '2024-04-12', 
     time: '10:15 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.3': { 
     date: '2024-04-12', 
     time: '10:00 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.2': { 
     date: '2024-04-12', 
     time: '09:45 EDT',
-    commit: '2f2b075'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   },
   'v1.0.1': { 
     date: '2025-04-12', 
     time: '11:30 EDT',
-    commit: '25c70b2'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/25c70b2'
   },
   'v1.0.0': { 
     date: '2025-04-12', 
     time: '11:15 EDT',
-    commit: '25c70b2'
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/25c70b2'
   }
 };
 
 export const VERSION_HISTORY = {
+  'v1.1.6': { date: '2025-04-12', time: '12:35 EDT' },
   'v1.1.5': { date: '2025-04-12', time: '12:30 EDT' },
   'v1.1.4': { date: '2025-04-12', time: '12:25 EDT' },
   'v1.1.3': { date: '2025-04-12', time: '12:20 EDT' },
@@ -138,6 +148,7 @@ export const VERSIONS = {
 export const VERSION = WORKING_VERSION;
 
 export const CHANGES = [
+  'v1.1.6 - Added clickable logo navigation to homepage',
   'v1.1.5 - Enhanced property image quality and added high-resolution support',
   'v1.1.4 - Fixed dynamic location-based heading updates',
   `Edit ${EDIT_VERSION} - Moved API debug info to bottom of page and fixed heading updates`,
