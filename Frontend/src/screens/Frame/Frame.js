@@ -15,9 +15,15 @@ import {
   numberOfBedroomsOptions,
   propertySizeOptions
 } from '../../constants/filterOptions';
-import { VERSION } from '../../version';
+import { VERSIONS } from '../../version';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import { searchProperties } from '../../services/realtyApi';
+import { Link } from 'react-router-dom';
+import ApiIcon from '@mui/icons-material/Api';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import MemoryIcon from '@mui/icons-material/Memory';
+import StorageIcon from '@mui/icons-material/Storage';
 
 function Frame() {
   const [originalData, setOriginalData] = useState([]);
@@ -33,6 +39,8 @@ function Frame() {
   const [isLoading, setIsLoading] = useState(true);
   const [debugInfo, setDebugInfo] = useState(null);
   const [copySuccess, setCopySuccess] = useState('');
+  const [currentLocation, setCurrentLocation] = useState('');
+  const [apiDebugInfo, setApiDebugInfo] = useState(null);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -91,6 +99,8 @@ function Frame() {
   };
 
   const handleSearch = async (searchLocation) => {
+    console.log('Search location updated:', searchLocation);
+    setCurrentLocation(searchLocation);
     try {
       setIsLoading(true);
       setError(null);
@@ -209,7 +219,23 @@ function Frame() {
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
-          <Chip label={`Version ${VERSION}`} color="primary" />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip label={`Version ${VERSIONS.working}`} color="primary" />
+            {VERSIONS.edit && (
+              <Chip 
+                label={VERSIONS.edit} 
+                color="warning" 
+              />
+            )}
+            <Link to="/changelog" style={{ textDecoration: 'none' }}>
+              <Chip 
+                label="View Changelog" 
+                variant="outlined" 
+                color="primary"
+                sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.08)' } }}
+              />
+            </Link>
+          </Box>
           {debugInfo && (
             <Chip 
               label={debugInfo.success ? "API Request Successful" : "API Request Failed"} 
@@ -276,7 +302,7 @@ function Frame() {
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Popular in Manchester
+            {currentLocation ? `Properties in ${currentLocation}` : 'Popular in Manchester'}
           </Typography>
           <Typography variant="body1" color="text.secondary">
             The most viewed and favorited homes in the past day.
@@ -332,6 +358,45 @@ function Frame() {
             )}
           </>
         )}
+
+        {/* API Debug Info at bottom */}
+        <Box sx={{ mt: 6 }}>
+          {apiDebugInfo && (
+            <Paper sx={{ p: 2, bgcolor: 'background.paper' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                API Debug Info
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Chip
+                  icon={<ApiIcon />}
+                  label={`Status: ${apiDebugInfo.status}`}
+                  color={apiDebugInfo.status === 'success' ? 'success' : 'error'}
+                  variant="outlined"
+                />
+                <Chip
+                  icon={<AccessTimeIcon />}
+                  label={`Response Time: ${apiDebugInfo.responseTime}ms`}
+                  variant="outlined"
+                />
+                <Chip
+                  icon={<DataObjectIcon />}
+                  label={`Data Points: ${apiDebugInfo.dataPoints}`}
+                  variant="outlined"
+                />
+                <Chip
+                  icon={<MemoryIcon />}
+                  label={`Cache: ${apiDebugInfo.cacheStatus}`}
+                  variant="outlined"
+                />
+                <Chip
+                  icon={<StorageIcon />}
+                  label={`Memory: ${apiDebugInfo.memoryUsage}`}
+                  variant="outlined"
+                />
+              </Box>
+            </Paper>
+          )}
+        </Box>
       </Container>
 
       <ErrorMessage 
