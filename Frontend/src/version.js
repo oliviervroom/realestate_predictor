@@ -1,11 +1,23 @@
 // Working version - only updated when changes are confirmed working
-export const WORKING_VERSION = '1.1.8';
+export const WORKING_VERSION = '1.1.9';
 
 // Edit version - increments with each edit, resets when working version updates
 export const EDIT_VERSION = 0;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.9': {
+    title: 'Homepage Text and Search Improvements',
+    details: [
+      'Updated homepage title to "Properties in Manchester, NH"',
+      'Changed subtitle to "Available properties for investment"',
+      'Fixed filter functionality for default Manchester, NH location',
+      'Improved search handling to properly include city and state'
+    ],
+    date: '2024-04-11',
+    time: '13:30 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/0bdad03'
+  },
   'v1.1.8': {
     title: 'Filter System Optimization',
     details: [
