@@ -1,18 +1,38 @@
 // Working version - only updated when changes are confirmed working
-export const WORKING_VERSION = '1.1.7';
+export const WORKING_VERSION = '1.1.8';
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 1;
+export const EDIT_VERSION = 0;
 
 // Version details for changelog
 export const versionDetails = {
-  'v1.1.7': {
-    title: 'Bath Filter Enhancement',
+  'v1.1.8': {
+    title: 'Filter System Optimization',
     details: [
-      'Fixed bathroom filter in API calls to use correct parameter names (baths_min and baths_max)',
-      'Ensured proper filtering of properties based on minimum number of bathrooms',
-      'Updated beds/baths interface for consistent range selection'
+      'Removed season and month filters to focus on core property attributes',
+      'Enhanced API debug information display in UI',
+      'Improved filter state management and API request handling',
+      'Updated property filtering to use correct API parameters',
+      'Added detailed debug steps for filter operations'
     ],
+    date: '2024-04-11',
+    time: '13:00 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
+  },
+  'v1.1.7': {
+    title: 'Price Filter Enhancement',
+    details: [
+      'Added modern price range selector with slider and input fields',
+      'Implemented client-side price validation to ensure strict price range filtering',
+      'Added support for one-sided price ranges (min-only or max-only)',
+      'Updated price display formatting ($XXk, $X.XM)',
+      'Fixed API integration to properly handle price range parameters',
+      'Improved UX with dynamic slider behavior and clear input fields',
+      'Added square footage filter with 5 sqft precision and 4,000+ sqft max range',
+      'Updated API integration to handle square footage filtering'
+    ],
+    date: '2024-04-11',
+    time: '12:40 EDT',
     commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
   },
   'v1.1.6': {
@@ -22,6 +42,8 @@ export const versionDetails = {
       'Added homepage navigation when clicking logo',
       'Improved header component accessibility'
     ],
+    date: '2024-04-11',
+    time: '12:35 EDT',
     commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
   },
   'v1.1.5': {
@@ -31,6 +53,8 @@ export const versionDetails = {
       'Added high-resolution image support',
       'Enhanced image loading and fallback handling'
     ],
+    date: '2024-04-11',
+    time: '12:30 EDT',
     commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
   },
   'v1.1.4': {
@@ -122,36 +146,11 @@ export const versionDetails = {
   }
 };
 
-export const VERSION_HISTORY = {
-  'v1.1.7': { date: '2025-04-12', time: '12:40 EDT' },
-  'v1.1.6': { date: '2025-04-12', time: '12:35 EDT' },
-  'v1.1.5': { date: '2025-04-12', time: '12:30 EDT' },
-  'v1.1.4': { date: '2025-04-12', time: '12:25 EDT' },
-  'v1.1.3': { date: '2025-04-12', time: '12:20 EDT' },
-  'v1.1.2': { date: '2025-04-12', time: '12:16 EDT' },
-  'v1.1.1': { date: '2025-04-12', time: '12:10 EDT' },
-  'v1.1.0': { date: '2025-04-12', time: '11:45 EDT' },
-  'v1.0.9': { date: '2024-04-12', time: '11:30 EDT' },
-  'v1.0.8': { date: '2024-04-12', time: '11:15 EDT' },
-  'v1.0.7': { date: '2024-04-12', time: '11:00 EDT' },
-  'v1.0.6': { date: '2024-04-12', time: '10:45 EDT' },
-  'v1.0.5': { date: '2024-04-12', time: '10:30 EDT' },
-  'v1.0.4': { date: '2024-04-12', time: '10:15 EDT' },
-  'v1.0.3': { date: '2024-04-12', time: '10:00 EDT' },
-  'v1.0.2': { date: '2024-04-12', time: '09:45 EDT' },
-  'v1.0.1': { date: '2025-04-12', time: '11:30 EDT' },
-  'v1.0.0': { date: '2025-04-12', time: '11:15 EDT' }
-};
-
-// Format version strings for display
-export const formatWorkingVersion = () => `Working ${WORKING_VERSION}`;
-export const formatEditVersion = () => `Edit ${EDIT_VERSION}`;
-
-// Export both versions separately instead of combining them
+// Export both versions separately
 export const VERSIONS = {
   working: `Working ${WORKING_VERSION}`,
   edit: `Edit ${EDIT_VERSION}`,
-  history: VERSION_HISTORY
+  history: versionDetails
 };
 
 // For backward compatibility with existing code
