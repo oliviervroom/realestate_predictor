@@ -1,11 +1,20 @@
 // Working version - only updated when changes are confirmed working
-export const WORKING_VERSION = '1.1.6';
+export const WORKING_VERSION = '1.1.7';
 
 // Edit version - increments with each edit, resets when working version updates
 export const EDIT_VERSION = 1;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.7': {
+    title: 'Bath Filter Enhancement',
+    details: [
+      'Fixed bathroom filter in API calls to use correct parameter names (baths_min and baths_max)',
+      'Ensured proper filtering of properties based on minimum number of bathrooms',
+      'Updated beds/baths interface for consistent range selection'
+    ],
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/d5a674e'
+  },
   'v1.1.6': {
     title: 'Navigation Enhancement',
     details: [
@@ -114,6 +123,7 @@ export const versionDetails = {
 };
 
 export const VERSION_HISTORY = {
+  'v1.1.7': { date: '2025-04-12', time: '12:40 EDT' },
   'v1.1.6': { date: '2025-04-12', time: '12:35 EDT' },
   'v1.1.5': { date: '2025-04-12', time: '12:30 EDT' },
   'v1.1.4': { date: '2025-04-12', time: '12:25 EDT' },
@@ -147,7 +157,22 @@ export const VERSIONS = {
 // For backward compatibility with existing code
 export const VERSION = WORKING_VERSION;
 
-export const CHANGES = [
+export const CHANGELOG = [
+  {
+    version: '1.1.7',
+    changes: [
+      'Fixed bathroom filter in API calls to use correct parameter names (baths_min and baths_max)',
+      'Ensured proper filtering of properties based on minimum number of bathrooms'
+    ]
+  },
+  {
+    version: '1.1.6',
+    changes: [
+      'Fixed beds and baths filters in API calls',
+      'Added support for range selection in beds and baths filters',
+      'Updated API request to properly handle both beds and baths parameters'
+    ]
+  },
   'v1.1.6 - Added clickable logo navigation to homepage',
   'v1.1.5 - Enhanced property image quality and added high-resolution support',
   'v1.1.4 - Fixed dynamic location-based heading updates',

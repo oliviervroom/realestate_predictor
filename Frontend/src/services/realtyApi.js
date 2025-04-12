@@ -14,7 +14,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const API_KEY = process.env.REACT_APP_RAPIDAPI_KEY;
 
-export const searchProperties = async (location = 'Manchester, NH') => {
+export const searchProperties = async (location = 'Manchester, NH', filters = {}) => {
   try {
     await delay(300); // Keep consistent response timing
     const query = location.trim();
@@ -30,6 +30,17 @@ export const searchProperties = async (location = 'Manchester, NH') => {
         field: 'list_date'
       }
     };
+
+    // Add bedroom filter if specified
+    if (filters.beds) {
+      requestData.beds = filters.beds;
+    }
+
+    // Add bathroom filter if specified
+    if (filters.baths) {
+      requestData.baths_min = filters.baths.min;
+      requestData.baths_max = filters.baths.max;
+    }
 
     // Add location parameters based on search type
     if (isZip) {
@@ -122,11 +133,20 @@ export const searchProperties = async (location = 'Manchester, NH') => {
 
 export const getPropertyDetails = async (propertyId) => {
   try {
-    const response = await realtyApi.get('/properties/v2/detail', {
+    const response = await realtyApi.get('/properties/v3/detail', {
       params: { property_id: propertyId }
     });
     
-    const data = response.data;
+    const data = response.data?.data?.home;
+    if (!data) {
+      return {
+        success: false,
+        error: response.data,
+        errorMessage: 'Invalid response format: missing home data',
+        version: VERSION
+      };
+    }
+
     return {
       success: true,
       property: {
@@ -168,10 +188,19 @@ export const getLocationSuggestions = async (query) => {
   if (!query || query.length < 2) return [];
   
   try {
+    console.log('Fetching location suggestions for:', query); // Debug log
     const response = await realtyApi.get('/locations/v2/auto-complete', {
-      params: { input: query }
+      params: {
+        input: query,  // Changed back to 'input' for v2 API
+        limit: 5
+      }
     });
-    return response.data?.autocomplete || [];
+    console.log('Location suggestions response:', response.data); // Debug log
+    
+    // v2 response structure: { autocomplete: [...] }
+    const suggestions = response.data?.autocomplete || [];
+    console.log('Processed suggestions:', suggestions); // Debug log
+    return suggestions;
   } catch (error) {
     console.error('Error fetching location suggestions:', error.response?.data || error.message);
     return [];
