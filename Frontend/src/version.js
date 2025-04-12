@@ -1,11 +1,19 @@
 // Working version - only updated when changes are confirmed working
-export const WORKING_VERSION = '1.1.4';
+export const WORKING_VERSION = '1.1.5';
 
 // Edit version - increments with each edit, resets when working version updates
 export const EDIT_VERSION = 1;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.5': {
+    title: 'Image Quality Enhancement',
+    details: [
+      'Improved property image quality in PropertyInfo page',
+      'Added high-resolution image support',
+      'Enhanced image loading and fallback handling'
+    ]
+  },
   'v1.1.4': {
     title: 'UI Enhancements',
     details: [
@@ -45,6 +53,7 @@ export const versionDetails = {
 };
 
 export const VERSION_HISTORY = {
+  'v1.1.5': { date: '2025-04-12', time: '12:30 EDT' },
   'v1.1.4': { date: '2025-04-12', time: '12:25 EDT' },
   'v1.1.3': { date: '2025-04-12', time: '12:20 EDT' },
   'v1.1.2': { date: '2025-04-12', time: '12:16 EDT' },
@@ -77,6 +86,7 @@ export const VERSIONS = {
 export const VERSION = WORKING_VERSION;
 
 export const CHANGES = [
+  'v1.1.5 - Enhanced property image quality and added high-resolution support',
   'v1.1.4 - Fixed dynamic location-based heading updates',
   `Edit ${EDIT_VERSION} - Moved API debug info to bottom of page and fixed heading updates`,
   'v1.1.3 - Improved homepage layout and dynamic location-based headings',

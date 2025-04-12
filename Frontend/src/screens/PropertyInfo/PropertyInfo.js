@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Box, Typography, Container, Card, CardContent, Slider, Chip, Alert
+  Box, Typography, Container, Card, CardContent, Slider, Chip, Alert,
+  Paper, Accordion, AccordionSummary, AccordionDetails, IconButton, Tooltip
 } from '@mui/material';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer
 } from 'recharts';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ApiIcon from '@mui/icons-material/Api';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import MemoryIcon from '@mui/icons-material/Memory';
+import StorageIcon from '@mui/icons-material/Storage';
 import Header from '../../components/Header';
 import MapComponent from './MapComponent';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
-import { VERSION } from '../../version';
+import { VERSIONS } from '../../version';
 
 const PropertyInfo = () => {
   const location = useLocation();
@@ -19,9 +27,19 @@ const PropertyInfo = () => {
 
   const [error, setError] = useState(null);
   const [dataErrors, setDataErrors] = useState([]);
+  const [copySuccess, setCopySuccess] = useState('');
   const [adjustedRent, setAdjustedRent] = useState(
     property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045)
   );
+
+  const handleCopyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(JSON.stringify(text, null, 2))
+      .then(() => {
+        setCopySuccess(`${label} copied!`);
+        setTimeout(() => setCopySuccess(''), 2000);
+      })
+      .catch(err => console.error('Failed to copy:', err));
+  };
 
   useEffect(() => {
     // Validate required data
@@ -41,26 +59,25 @@ const PropertyInfo = () => {
       if (!property.sqft) {
         errors.push('Square footage information is missing');
       }
-      if (!property.address?.line || !property.address?.city || !property.address?.state_code) {
+      if (!property.location?.address?.line || !property.location?.address?.city || !property.location?.address?.state_code) {
         errors.push('Complete address information is missing');
       }
     }
     setDataErrors(errors);
   }, [property]);
 
-  if (!property) {
+  if (dataErrors.length > 0) {
     return (
-      <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
-        <Header />
-        <Container>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-            <Chip label={`Version ${VERSION}`} color="primary" />
-          </Box>
-          <Alert severity="error" sx={{ mt: 4 }}>
-            No property data found. Please return to the home page and try again.
-          </Alert>
-        </Container>
-      </Box>
+      <Container>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Chip label={VERSIONS.working} color="primary" />
+        </Box>
+        <Alert severity="error" sx={{ mt: 4 }}>
+          {dataErrors.map((error, index) => (
+            <div key={index}>{error}</div>
+          ))}
+        </Alert>
+      </Container>
     );
   }
 
@@ -99,57 +116,167 @@ const PropertyInfo = () => {
   };
 
   return (
-    <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
+    <Box sx={{ bgcolor: '#faf9f8', minHeight: '100vh' }}>
       <Header />
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Chip label={`Version ${VERSION}`} color="primary" />
+          <Chip label={VERSIONS.working} color="primary" />
         </Box>
 
-        {dataErrors.length > 0 && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Some property information is missing or incomplete:
-            </Typography>
-            <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-              {dataErrors.map((err, index) => (
-                <li key={index}>{err}</li>
-              ))}
-            </ul>
-          </Alert>
-        )}
-
-        {/* Basic Info */}
+        {/* Property Details */}
         <Card sx={{ mb: 4 }}>
-          <Box
-            component="img"
-            src={property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image || '/genbcs-24082644-0-jpg.png'}
-            alt="Property"
-            sx={{ width: '100%', height: 400, objectFit: 'cover' }}
-            onError={(e) => {
-              e.target.src = '/genbcs-24082644-0-jpg.png';
-              setError('Failed to load property image');
-            }}
-          />
-          <CardContent>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              {(() => {
-                const price = property?.price || property?.list_price || property?.estimate?.estimate;
-                return price ? `$${price.toLocaleString()}` : 'Price not available';
+          <Box sx={{ width: '100%', height: '400px', position: 'relative', overflow: 'hidden' }}>
+            <Box
+              component="img"
+              src={(() => {
+                const photoUrl = property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image;
+                if (!photoUrl) return '/genbcs-24082644-0-jpg.png';
+                // Replace thumbnail suffixes with high-quality version
+                return photoUrl.replace(/-m(\d+)s\.jpg/, '-m$1x.jpg')
+                             .replace(/-t\.jpg/, '-o.jpg')
+                             .replace(/s\.jpg$/, 'od.jpg');
               })()}
+              alt="Property"
+              onError={(e) => {
+                e.target.src = '/genbcs-24082644-0-jpg.png';
+              }}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          </Box>
+          <CardContent>
+            <Typography variant="h5" gutterBottom>
+              {property.location?.address?.line || 'Address not available'}
             </Typography>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              {[
-                property?.address?.line,
-                property?.address?.city,
-                property?.address?.state_code
-              ].filter(Boolean).join(', ') || 'Address not available'}
+            <Typography color="text.secondary" gutterBottom>
+              {property.location?.address?.city || 'City not available'}, {property.location?.address?.state_code || 'State not available'} {property.location?.address?.postal_code || 'Postal code not available'}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {property?.beds || property?.description?.beds || '0'} beds • {property?.baths || property?.description?.baths || '0'} baths • {(property?.sqft || property?.description?.sqft || '0').toLocaleString()} sqft
-            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+              <Chip label={`${property.beds} beds`} />
+              <Chip label={`${property.baths} baths`} />
+              <Chip label={`${(property.sqft || 0).toLocaleString()} sqft`} />
+              <Chip label={`$${(property.price || 0).toLocaleString()}`} color="primary" />
+            </Box>
           </CardContent>
         </Card>
+
+        {/* Map Component */}
+        <Card sx={{ mb: 4, height: '400px' }}>
+          <MapComponent
+            lat={property.location.address.lat}
+            lng={property.location.address.long}
+            properties={allProperties}
+            currentPropertyId={currentPropertyId}
+          />
+        </Card>
+
+        {/* API Debug Information */}
+        <Accordion sx={{ mb: 3 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography>API Debug Information</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {/* API Request Info */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="h6">API Request:</Typography>
+                <Tooltip title={copySuccess || "Copy to clipboard"}>
+                  <IconButton onClick={() => handleCopyToClipboard({
+                    endpoint: '/properties/v3/detail',
+                    method: 'GET',
+                    params: { property_id: property.property_id }
+                  }, 'API request')}>
+                    <ContentCopyIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Box component="pre" sx={{ 
+                bgcolor: '#f5f5f5', 
+                p: 2, 
+                borderRadius: 1,
+                overflow: 'auto',
+                maxHeight: '200px'
+              }}>
+                {JSON.stringify({
+                  endpoint: '/properties/v3/detail',
+                  method: 'GET',
+                  params: { property_id: property.property_id }
+                }, null, 2)}
+              </Box>
+            </Paper>
+
+            {/* Raw Property Data */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="h6">Property Data:</Typography>
+                <Tooltip title={copySuccess || "Copy to clipboard"}>
+                  <IconButton onClick={() => handleCopyToClipboard(property.raw_data, 'Property data')}>
+                    <ContentCopyIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Box component="pre" sx={{ 
+                bgcolor: '#f5f5f5', 
+                p: 2, 
+                borderRadius: 1,
+                overflow: 'auto',
+                maxHeight: '400px'
+              }}>
+                {JSON.stringify(property.raw_data, null, 2)}
+              </Box>
+            </Paper>
+
+            {/* API Response Stats */}
+            <Paper sx={{ p: 2, bgcolor: 'background.paper' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Available Features for ML Model
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {Object.entries(property).map(([key, value]) => {
+                  // Skip raw_data as it's shown separately
+                  if (key === 'raw_data') return null;
+                  
+                  // Handle nested objects
+                  if (typeof value === 'object' && value !== null) {
+                    if (Array.isArray(value)) {
+                      return (
+                        <Chip
+                          key={key}
+                          label={`${key}: [${value.length} items]`}
+                          variant="outlined"
+                          size="small"
+                        />
+                      );
+                    } else {
+                      // For nested objects, show their keys
+                      return (
+                        <Chip
+                          key={key}
+                          label={`${key}: {${Object.keys(value).join(', ')}}`}
+                          variant="outlined"
+                          size="small"
+                        />
+                      );
+                    }
+                  }
+                  
+                  // Handle primitive values
+                  return (
+                    <Chip
+                      key={key}
+                      label={`${key}: ${value}`}
+                      variant="outlined"
+                      size="small"
+                    />
+                  );
+                })}
+              </Box>
+            </Paper>
+          </AccordionDetails>
+        </Accordion>
 
         {/* About This Home */}
         <Box sx={{ mb: 6 }}>
@@ -171,7 +298,7 @@ const PropertyInfo = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                   <XAxis dataKey="date" />
                   <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Price']} />
+                  <ChartTooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Price']} />
                   <Line type="monotone" dataKey="value" stroke="#c82021" strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
