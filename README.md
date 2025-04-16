@@ -1,3 +1,6 @@
+# Attributions
+The initial structure and code was generated using bolt.new. Then, changes were made to it accordingly. 
+
 # Rental Income Prediction Application
 
 ## Overview
@@ -19,27 +22,5 @@ App.js: controls routing (e.g. /MA/Boston/Ashmont-250) and imports components
       SearchBar
 
 
-Frontend/PropertyDetails.js: React component that displays detailed info about a specific property. 
-Frontend/PropertyListings.js
-
-Frontend/PropertyInfo.js: Currently unused Component that Bhav made. 
-
-Detailed:
-Frontend/PropertyDetails.js: React component that displays detailed info about a specific property. 
-   Here's what it does:
-   Data Fetching:
-   Uses useParams to get the property ID from the URL
-   Calls getPropertyDetails from realtyApi.js to fetch property data
-   Shows a loading spinner while data is being fetched
-   Navigation:
-   Has a back button to return to the previous page
-   Uses React Router's useNavigate for navigation
-   UI Components:
-   Displays a large property image
-   Shows key property details:
-   Price (formatted with commas)
-   Number of bedrooms
-   Number of bathrooms
-   Square footage
-   Full address
+Frontend/PropertyInfo.js: Shows detailed info about a specific property 
 
