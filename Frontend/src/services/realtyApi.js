@@ -53,176 +53,139 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const API_KEY = process.env.REACT_APP_RAPIDAPI_KEY;
 
-export const searchProperties = async (location = 'Manchester, NH', filters = {}) => {
-  try {
-    await delay(300); // Keep consistent response timing
-    const query = location.trim();
-    const isZip = /^\d{5}$/.test(query);
+/*
+RealtyInUS API Endpoints Documentation:
 
-    // Build request data based on search type
+1. GET /locations/v2/auto-complete
+   - Purpose: Get location suggestions while typing
+   - Query params: 
+     - q: search query string
+   - Response: Array of location objects with properties:
+     - postal_code: ZIP code
+     - city: City name
+     - state_code: State abbreviation
+     - line: Street address
+     - neighborhood: Neighborhood name
+
+2. POST /properties/v3/list
+   - Purpose: List properties with filtering
+   - Request body filters:
+     - state_code: State abbreviation
+     - city: City name
+     - postal_code: ZIP code
+     - address: Street address
+     - radius: Search radius in miles
+     - beds_min, beds_max: Bedroom range
+     - baths_min, baths_max: Bathroom range
+     - price_min, price_max: Price range
+     - exact_match: Boolean for exact address match
+
+3. GET /properties/v3/detail
+   - Purpose: Get detailed information about a specific property
+   - Query params:
+     - property_id: Unique property identifier
+   - Response: Detailed property information including:
+     - Basic info (price, beds, baths)
+     - Location details
+     - Property features
+     - Market data
+
+4. GET /properties/v3/get-photos
+   - Purpose: Get property photos
+   - Query params:
+     - property_id: Unique property identifier
+   - Response: Array of photo URLs and metadata
+*/
+
+// Format address query for better auto-complete results
+const formatAddressQuery = (query) => {
+  // Check if query contains a number
+  const hasNumber = /\d/.test(query);
+  if (!hasNumber) return query;
+
+  // Split into number and street parts
+  const parts = query.split(/\s+/);
+  const numberPart = parts.find(part => /^\d+$/.test(part));
+  const streetPart = parts.filter(part => !/^\d+$/.test(part)).join(' ');
+
+  // If we have both number and street, format as "street number"
+  if (numberPart && streetPart) {
+    return `${streetPart} ${numberPart}`;
+  }
+
+  return query;
+};
+
+export const searchProperties = async (params) => {
+  const debugSteps = [];
+  try {
+    debugSteps.push({
+      step: 'Initial Parameters',
+      data: params
+    });
+
+    // Construct the request data
     const requestData = {
-      limit: 20,
+      limit: 42,
       offset: 0,
-      status: ['for_sale', 'ready_to_build'],
-      sort: {
-        direction: 'desc',
-        field: 'list_date'
-      }
+      postal_code: params.postal_code,
+      state_code: params.state_code,
+      city: params.city,
+      ...params
     };
 
-    // Collect debug information
-    const debugSteps = [];
-    debugSteps.push({ step: 'Initial Filters', data: filters });
+    debugSteps.push({
+      step: 'Constructed Request Data',
+      data: requestData
+    });
 
-    // Add bedroom filter if specified
-    if (filters.beds) {
-      requestData.beds = {
-        min: filters.beds.min
-      };
-      if (filters.beds.max) {
-        requestData.beds.max = filters.beds.max;
-      }
-      debugSteps.push({ step: 'Beds Filter Added', data: requestData.beds });
-    }
+    const response = await rateLimiter.add(() =>
+      realtyApi.post('/properties/v3/list', requestData)
+    );
 
-    // Add bathroom filter if specified
-    if (filters.baths) {
-      requestData.baths = {
-        min: filters.baths.min
-      };
-      if (filters.baths.max) {
-        requestData.baths.max = filters.baths.max;
-      }
-      debugSteps.push({ step: 'Baths Filter Added', data: requestData.baths });
-    }
+    debugSteps.push({
+      step: 'Raw API Response',
+      data: response.data
+    });
 
-    // Add price filter if specified
-    if (filters.price) {
-      requestData.list_price = {};
-      if (filters.price.min) {
-        requestData.list_price.min = filters.price.min;
-      }
-      if (filters.price.max) {
-        requestData.list_price.max = filters.price.max;
-      }
-      debugSteps.push({ step: 'Price Filter Added', data: requestData.list_price });
-    }
-
-    // Add square footage filter if specified
-    if (filters.sqft) {
-      requestData.sqft = {};
-      if (filters.sqft.min) {
-        requestData.sqft.min = filters.sqft.min;
-      }
-      if (filters.sqft.max && filters.sqft.max < 4000) {
-        requestData.sqft.max = filters.sqft.max;
-      }
-      debugSteps.push({ step: 'Square Footage Filter Added', data: requestData.sqft });
-    }
-
-    // Add location parameters based on search type
-    if (isZip) {
-      requestData.postal_code = query;
-    } else {
-      const [city, state_code] = query.split(',').map(part => part.trim());
-      if (!city || !state_code) {
-        return {
-          success: false,
-          errorSource: 'Client Validation',
-          errorMessage: 'Please provide both city and state (e.g., "Boston, MA")',
-          version: VERSION,
-          debugSteps
-        };
-      }
-      requestData.city = city;
-      requestData.state_code = state_code;
-    }
-
-    console.log('Final API Request:', requestData);
-
-    // Use rate limiter for the API call
-    const response = await rateLimiter.add(() => realtyApi.post('/properties/v3/list', requestData));
-    
     if (response.error) {
-      throw response.error;
-    }
-
-    console.log('API Response:', response.data);
-
-    if (response.data?.errors) {
       return {
         success: false,
+        errorMessage: response.error.message || 'API request failed',
+        debugSteps,
         requestData,
-        error: response.data,
-        errorSource: 'Realty API',
-        errorMessage: response.data.errors[0]?.data?.message || 'API Error',
-        version: VERSION,
-        debugSteps
+        responseData: response.data,
+        error: response.error
       };
     }
 
-    const results = response.data?.data?.home_search?.results;
-    if (!Array.isArray(results)) {
-      return {
-        success: false,
-        requestData,
-        error: response.data,
-        errorSource: 'Data Processing',
-        errorMessage: 'Invalid response format: missing or invalid results array',
-        version: VERSION,
-        debugSteps
-      };
-    }
+    const processedData = response.data?.data?.home_search?.results || [];
 
-    const processedResults = results.map(item => ({
-      property_id: item?.property_id,
-      price: item?.list_price || item?.price,
-      beds: item?.description?.beds || item?.beds,
-      baths: item?.description?.baths || item?.baths,
-      sqft: item?.description?.sqft || item?.sqft,
-      photos: item?.photos || [],
-      primary_photo: item?.primary_photo?.href || item?.photos?.[0]?.href,
-      location: {
-        address: {
-          line: item?.location?.address?.line || item?.address?.line,
-          city: item?.location?.address?.city || item?.address?.city,
-          state_code: item?.location?.address?.state_code || item?.address?.state_code,
-          postal_code: item?.location?.address?.postal_code || item?.address?.postal_code,
-          lat: item?.location?.address?.coordinate?.lat,
-          long: item?.location?.address?.coordinate?.lon
-        }
-      },
-      description: item?.description || {},
-      raw_data: item // Keep raw data for debugging
-    }));
-
-    // Add client-side price filtering as a safety measure
-    const filteredResults = processedResults.filter(item => {
-      const price = item.price;
-      if (!price) return true; // Keep items without price info
-      
-      if (filters.price?.min && price < filters.price.min) return false;
-      if (filters.price?.max && price > filters.price.max) return false;
-      
-      return true;
+    debugSteps.push({
+      step: 'Processed Data',
+      data: {
+        count: processedData.length,
+        sample: processedData.slice(0, 2) // Show first 2 items as sample
+      }
     });
 
     return {
       success: true,
+      processedData,
+      debugSteps,
       requestData,
       responseData: response.data,
-      processedData: filteredResults,
-      version: VERSION,
-      debugSteps
+      timestamp: new Date().toISOString()
     };
+
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('Error in searchProperties:', error);
     return {
       success: false,
-      errorSource: 'Network',
       errorMessage: error.message || 'Failed to fetch properties',
-      version: VERSION,
-      debugSteps: []
+      debugSteps,
+      requestData: params,
+      error
     };
   }
 };
@@ -285,26 +248,47 @@ export const getPropertyDetails = async (propertyId) => {
   }
 };
 
-// For search suggestions as user types
 export const getLocationSuggestions = async (query) => {
   if (!query || query.length < 2) return [];
-  
+
   try {
+    const formattedQuery = formatAddressQuery(query);
     const response = await rateLimiter.add(() => 
       realtyApi.get('/locations/v2/auto-complete', {
-        params: {
-          input: query,
-          limit: 5
-        }
+        params: { input: formattedQuery }
       })
     );
-    
+
     if (response.error) {
       throw response.error;
     }
 
-    // v2 response structure is different from v3
-    return response.data?.autocomplete || [];
+    const suggestions = response.data?.autocomplete || [];
+    
+    // Add unique IDs to suggestions to prevent React key warnings
+    const processedSuggestions = suggestions.map((suggestion, index) => ({
+      ...suggestion,
+      id: `${suggestion.postal_code || suggestion.line || suggestion.city || suggestion.state_code}-${index}`
+    }));
+
+    return processedSuggestions
+      .filter(suggestion => {
+        // Remove duplicate ZIP codes
+        if (suggestion.postal_code) {
+          return processedSuggestions.findIndex(s => s.postal_code === suggestion.postal_code) === processedSuggestions.indexOf(suggestion);
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Prioritize addresses when query contains numbers
+        if (/\d/.test(query)) {
+          const aHasAddress = Boolean(a.line);
+          const bHasAddress = Boolean(b.line);
+          if (aHasAddress !== bHasAddress) return bHasAddress - aHasAddress;
+        }
+        return 0;
+      });
+
   } catch (error) {
     console.error('Error fetching location suggestions:', error);
     return [];
