@@ -69,16 +69,40 @@ RealtyInUS API Endpoints Documentation:
 
 2. POST /properties/v3/list
    - Purpose: List properties with filtering
-   - Request body filters:
-     - state_code: State abbreviation
-     - city: City name
-     - postal_code: ZIP code
-     - address: Street address
-     - radius: Search radius in miles
-     - beds_min, beds_max: Bedroom range
-     - baths_min, baths_max: Bathroom range
-     - price_min, price_max: Price range
-     - exact_match: Boolean for exact address match
+   - Request body parameters:
+     - limit (int): Number of items per response, for paging
+     - offset (int): The page index, for paging
+     - state_code (string): Filter by state
+     - city (string): Filter by city
+     - street_name (string): Filter by street
+     - address (string): Filter by address
+     - postal_code (string): Filter by postal code
+     - search_location (object): Filter around a location
+       - radius (int): Radius in miles
+       - location (string): Address or postal code
+     - status (array): Property status ["for_sale", "ready_to_build", "for_rent", "sold", "off_market", "other", "new_community"]
+     - type (array): Property type ["apartment", "condo_townhome", "condo_townhome_rowhome_coop", "condop", "condos", "coop", "duplex_triplex", "farm", "land", "mobile", "multi_family", "single_family", "townhomes"]
+     - keywords (string): Property features ["basement", "carport", "central_air", etc.]
+     - boundary (object): Filter within a GEOJson polygon
+     - baths (object): Filter by bathrooms {min: number}
+     - beds (object): Filter by bedrooms {min: number, max: number}
+     - list_price (object): Filter by price {min: number, max: number}
+     - sqft (object): Filter by square footage {min: number, max: number}
+     - lot_sqft (object): Filter by lot size {min: number, max: number}
+     - year_built (object): Filter by year built {min: number, max: number}
+     - hoa_fee (object): Filter by HOA fee {max: number}
+     - no_hoa_fee (boolean): Filter for no HOA fee
+     - pending (boolean): Filter pending properties
+     - contingent (boolean): Filter contingent properties
+     - foreclosure (boolean): Filter foreclosure properties
+     - has_tour (boolean): Filter properties with tours
+     - new_construction (boolean): Filter new construction
+     - cats (boolean): Filter cat-friendly properties
+     - dogs (boolean): Filter dog-friendly properties
+     - matterport (boolean): Filter properties with Matterport tours
+     - sort (object): Sort results
+       - direction (string): "desc" or "asc"
+       - field (string): "photo_count", "last_update_date", "list_date", "list_price", "sold_date", "sold_price", "beds", "lot_sqft"
 
 3. GET /properties/v3/detail
    - Purpose: Get detailed information about a specific property

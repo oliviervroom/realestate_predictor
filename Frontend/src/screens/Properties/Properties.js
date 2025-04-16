@@ -1,3 +1,23 @@
+//This page fetches properties from the API and displays them in a list or map view. 
+
+//It also has a search bar to search for properties by city, state, or ZIP code.
+
+//It also has a filter to filter properties by price, beds, baths, and sqft.
+
+//It also has a view toggle to switch between list and map view.  
+
+//It also has a breadcrumb to show the user's location.
+
+//It also has a loader to show when the properties are loading.
+
+//It also has an error message to show when the properties fail to load.  
+
+//It also has a debug info to show the API response.
+
+//It also has a version info to show the current version of the app.  
+
+
+
 import React, { useEffect, useState } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { Box, Container, Typography, Breadcrumbs, Link, Grid } from '@mui/material';
@@ -7,6 +27,9 @@ import ApiDebugInfo from '../../components/ApiDebugInfo/ApiDebugInfo';
 import ViewToggle from '../../components/ViewToggle/ViewToggle';
 import PropertyMap from '../../components/PropertyMap/PropertyMap';
 import PropertyCard from '../../components/PropertyCard/PropertyCard';
+import BedBathToggle from '../../components/BedBathToggle/BedBathToggle';
+import PriceToggle from '../../components/PriceToggle/PriceToggle';
+import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFootageToggle';
 import { searchProperties } from '../../services/realtyApi';
 import { WORKING_VERSION, EDIT_VERSION } from '../../version';
 
@@ -18,6 +41,12 @@ const Properties = () => {
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
   const [view, setView] = useState('list');
+  
+  // Filter states
+  const [price, setPrice] = useState(null);
+  const [beds, setBeds] = useState(null);
+  const [baths, setBaths] = useState(null);
+  const [sqft, setSqft] = useState(null);
 
   // Format location parameters
   const stateCode = state?.toUpperCase();
@@ -54,21 +83,51 @@ const Properties = () => {
     };
   };
 
-  // Build API filters based on view type
+  // Build API filters based on view type and filter states
   const buildFilters = () => {
     const filters = {};
+    
+    // Location filters
     if (postalCode) {
       filters.postal_code = postalCode;
     } else {
       if (state) filters.state_code = stateCode;
       if (city) filters.city = cityName;
       if (address) {
-        // For address searches, we want to find exact matches and nearby properties
         filters.address = formattedAddress;
-        filters.radius = '1.0'; // 1 mile radius for nearby properties
+        filters.radius = '1.0';
         filters.exact_match = true;
       }
     }
+    
+    // Price filter
+    if (price) {
+      filters.list_price = {};
+      if (price.min) filters.list_price.min = price.min;
+      if (price.max) filters.list_price.max = price.max;
+    }
+
+    // Beds filter
+    if (beds) {
+      filters.beds = {};
+      if (beds.min) filters.beds.min = beds.min;
+      if (beds.max) filters.beds.max = beds.max;
+    }
+
+    // Baths filter
+    if (baths) {
+      filters.baths = {};
+      if (baths.min) filters.baths.min = baths.min;
+      if (baths.max) filters.baths.max = baths.max;
+    }
+
+    // Square footage filter
+    if (sqft) {
+      filters.sqft = {};
+      if (sqft.min) filters.sqft.min = sqft.min;
+      if (sqft.max) filters.sqft.max = sqft.max;
+    }
+
     return filters;
   };
 
@@ -117,7 +176,7 @@ const Properties = () => {
     };
 
     fetchPropertyData();
-  }, [stateCode, cityName, formattedAddress, postalCode]);
+  }, [stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft]);
 
   // Render property cards
   const renderProperties = () => (
@@ -156,6 +215,32 @@ const Properties = () => {
         {/* Header with search */}
         <Box sx={{ mb: 3 }}>
           <SearchBar />
+        </Box>
+
+        {/* Filters */}
+        <Box sx={{ 
+          mb: 3, 
+          display: 'flex', 
+          gap: 2, 
+          flexWrap: 'wrap',
+          bgcolor: 'rgba(34, 34, 34, 0.9)',
+          p: 2,
+          borderRadius: 1
+        }}>
+          <PriceToggle
+            value={price}
+            onChange={setPrice}
+          />
+          <BedBathToggle
+            bedsValue={beds}
+            bathsValue={baths}
+            onBedsChange={setBeds}
+            onBathsChange={setBaths}
+          />
+          <SquareFootageToggle
+            value={sqft}
+            onChange={setSqft}
+          />
         </Box>
 
         {/* Breadcrumbs */}

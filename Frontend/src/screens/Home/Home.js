@@ -3,9 +3,6 @@ import { Box, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import SearchBar from '../../components/SearchBar/SearchBar';
-import BedBathToggle from '../../components/BedBathToggle/BedBathToggle';
-import PriceToggle from '../../components/PriceToggle/PriceToggle';
-import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFootageToggle';
 
 function Home() {
   const navigate = useNavigate();
@@ -72,23 +69,6 @@ function Home() {
                 onSearch={handleSearch}
                 placeholder="Enter city and state (e.g., Boston, MA) or ZIP code"
               />
-
-              <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <PriceToggle
-                  value={null}
-                  onChange={() => {}}
-                />
-                <BedBathToggle
-                  bedsValue={null}
-                  bathsValue={null}
-                  onBedsChange={() => {}}
-                  onBathsChange={() => {}}
-                />
-                <SquareFootageToggle
-                  value={null}
-                  onChange={() => {}}
-                />
-              </Box>
             </Box>
           </Box>
         </Container>
