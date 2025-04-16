@@ -16,12 +16,27 @@ const PropertyListings = () => {
     return () => clearTimeout(timer);
   }, []);
   const handleCardClick = useCallback((property) => {
-    navigate('/property-info', {
-      state: {
-        ...property,
-        allProperties: listings
-      }
-    });
+    // Get address components
+    const address = property?.location?.address?.line || property?.address?.line;
+    const city = property?.location?.address?.city || property?.address?.city;
+    const state = property?.location?.address?.state_code || property?.address?.state_code;
+
+    if (address && city && state) {
+      // Format the address for URL
+      const formattedAddress = address.toLowerCase().replace(/[,\s]+/g, '-');
+      const formattedCity = city.toLowerCase().replace(/\s+/g, '-');
+      const formattedState = state.toLowerCase();
+      
+      // Navigate to the proper route
+      navigate(`/${formattedState}/${formattedCity}/${formattedAddress}`, {
+        state: {
+          ...property,
+          allProperties: listings
+        }
+      });
+    } else {
+      console.error('Missing address information:', property);
+    }
   }, [navigate, listings]);
 
   if (!listings || !listings.length) {
@@ -46,9 +61,7 @@ const PropertyListings = () => {
         <Grid container spacing={3}>
           {listings.map((property, index) => (
             <Grid item xs={12} sm={6} md={4} key={property.property_id || index}>
-              <Box onClick={() => handleCardClick(property)} sx={{ cursor: 'pointer' }}>
-                <PropertyCard property={property} />
-              </Box>
+              <PropertyCard property={property} />
             </Grid>
           ))}
         </Grid>

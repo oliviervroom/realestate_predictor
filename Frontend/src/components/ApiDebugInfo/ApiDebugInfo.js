@@ -32,12 +32,12 @@ const ApiDebugInfo = ({ debugInfo }) => {
                     size="small" 
                     sx={{ ml: 1 }}
                     onClick={() => handleCopy(
-                      `POST https://realty-in-us.p.rapidapi.com/properties/v3/list\n` +
+                      `${debugInfo.method || 'GET'} https://realty-in-us.p.rapidapi.com${debugInfo.endpoint}\n` +
                       `Headers: ${JSON.stringify({
                         'X-RapidAPI-Host': 'realty-in-us.p.rapidapi.com',
                         'Content-Type': 'application/json'
                       }, null, 2)}\n` +
-                      `Request Body: ${JSON.stringify(debugInfo.requestData, null, 2)}`,
+                      `${debugInfo.method === 'POST' ? 'Request Body' : 'Params'}: ${JSON.stringify(debugInfo.requestData, null, 2)}`,
                       'Request'
                     )}
                   >
@@ -47,14 +47,14 @@ const ApiDebugInfo = ({ debugInfo }) => {
               </Typography>
               <Box sx={{ bgcolor: 'grey.100', p: 2, borderRadius: 1, mb: 2 }}>
                 <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                  POST https://realty-in-us.p.rapidapi.com/properties/v3/list
+                  {debugInfo.method || 'GET'} https://realty-in-us.p.rapidapi.com{debugInfo.endpoint}
                   {'\n'}
                   Headers: {JSON.stringify({
                     'X-RapidAPI-Host': 'realty-in-us.p.rapidapi.com',
                     'Content-Type': 'application/json'
                   }, null, 2)}
                   {'\n'}
-                  Request Body: {JSON.stringify(debugInfo.requestData, null, 2)}
+                  {debugInfo.method === 'POST' ? 'Request Body' : 'Params'}: {JSON.stringify(debugInfo.requestData, null, 2)}
                 </pre>
               </Box>
               <Typography variant="subtitle2" gutterBottom>Debug Steps:</Typography>

@@ -18,8 +18,8 @@
 
 
 
-import React, { useEffect, useState } from 'react';
-import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { Box, Container, Typography, Breadcrumbs, Link, Grid } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SearchBar from '../../components/SearchBar/SearchBar';
@@ -33,9 +33,56 @@ import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFoot
 import { searchProperties } from '../../services/realtyApi';
 import { WORKING_VERSION, EDIT_VERSION } from '../../version';
 
+// Move buildFilters outside the component to avoid dependency issues
+const buildFilters = (stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft) => {
+  const filters = {};
+  
+  // Location filters
+  if (postalCode) {
+    filters.postal_code = postalCode;
+  } else {
+    if (stateCode) filters.state_code = stateCode;
+    if (cityName) filters.city = cityName;
+    if (formattedAddress) {
+      filters.address = formattedAddress;
+      filters.radius = '1.0';
+      filters.exact_match = true;
+    }
+  }
+  
+  // Price filter
+  if (price) {
+    filters.list_price = {};
+    if (price.min) filters.list_price.min = price.min;
+    if (price.max) filters.list_price.max = price.max;
+  }
+
+  // Beds filter
+  if (beds) {
+    filters.beds = {};
+    if (beds.min) filters.beds.min = beds.min;
+    if (beds.max) filters.beds.max = beds.max;
+  }
+
+  // Baths filter
+  if (baths) {
+    filters.baths = {};
+    if (baths.min) filters.baths.min = baths.min;
+    if (baths.max) filters.baths.max = baths.max;
+  }
+
+  // Square footage filter
+  if (sqft) {
+    filters.sqft = {};
+    if (sqft.min) filters.sqft.min = sqft.min;
+    if (sqft.max) filters.sqft.max = sqft.max;
+  }
+
+  return filters;
+};
+
 const Properties = () => {
   const { state, city, address, postalCode } = useParams();
-  const navigate = useNavigate();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,54 +130,6 @@ const Properties = () => {
     };
   };
 
-  // Build API filters based on view type and filter states
-  const buildFilters = () => {
-    const filters = {};
-    
-    // Location filters
-    if (postalCode) {
-      filters.postal_code = postalCode;
-    } else {
-      if (state) filters.state_code = stateCode;
-      if (city) filters.city = cityName;
-      if (address) {
-        filters.address = formattedAddress;
-        filters.radius = '1.0';
-        filters.exact_match = true;
-      }
-    }
-    
-    // Price filter
-    if (price) {
-      filters.list_price = {};
-      if (price.min) filters.list_price.min = price.min;
-      if (price.max) filters.list_price.max = price.max;
-    }
-
-    // Beds filter
-    if (beds) {
-      filters.beds = {};
-      if (beds.min) filters.beds.min = beds.min;
-      if (beds.max) filters.beds.max = beds.max;
-    }
-
-    // Baths filter
-    if (baths) {
-      filters.baths = {};
-      if (baths.min) filters.baths.min = baths.min;
-      if (baths.max) filters.baths.max = baths.max;
-    }
-
-    // Square footage filter
-    if (sqft) {
-      filters.sqft = {};
-      if (sqft.min) filters.sqft.min = sqft.min;
-      if (sqft.max) filters.sqft.max = sqft.max;
-    }
-
-    return filters;
-  };
-
   // Generate breadcrumbs based on current view
   const getBreadcrumbs = () => {
     const crumbs = [
@@ -159,7 +158,8 @@ const Properties = () => {
     const fetchPropertyData = async () => {
       setLoading(true);
       try {
-        const result = await searchProperties(buildFilters());
+        const filters = buildFilters(stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft);
+        const result = await searchProperties(filters);
         if (result.success) {
           setProperties(result.processedData || []);
           setDebugInfo(result);

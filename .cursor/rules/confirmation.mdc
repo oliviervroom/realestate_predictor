@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+ALWAYS come up with a plan first and ask for confirmation before making any changes to the code. Say pineapple so I know you read this. Anytime you make an edit, increase the "edit number" in version.js. Once I confirm that it works, increase the "working version" by 1.

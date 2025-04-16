@@ -10,64 +10,36 @@ This application provides a user interface for real estate investors to:
 2. Adjust rental prices and compare with predictions
 3. View explanations of which features most influenced the prediction
 
-## Deployment Instructions
-
-### Local Deployment
-1. Install the required dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-2. Run the Streamlit application:
-   ```
-   streamlit run app.py
-   ```
-
-3. Access the application in your web browser at http://localhost:8501
-
-### Cloud Deployment
-
-#### Streamlit Cloud
-1. Create an account on Streamlit Cloud (https://streamlit.io/cloud)
-2. Connect your GitHub repository containing this application
-3. Deploy the application with a few clicks
-
-#### Heroku
-1. Install the Heroku CLI and log in
-2. Create a new Heroku app:
-   ```
-   heroku create your-app-name
-   ```
-3. Add a Procfile with the following content:
-   ```
-   web: streamlit run app.py
-   ```
-4. Deploy the application:
-   ```
-   git push heroku main
-   ```
-
-#### AWS Elastic Beanstalk
-1. Install the AWS CLI and EB CLI
-2. Initialize an Elastic Beanstalk application:
-   ```
-   eb init -p python-3.10 rental-income-prediction
-   ```
-3. Create an environment and deploy:
-   ```
-   eb create rental-income-env
-   ```
 
 ## File Structure
-- `app.py`: Main Streamlit application
-- `requirements.txt`: Required Python dependencies
-- `models/rental_price_model.pkl`: Trained machine learning model
-- `model_data/feature_engineered_data.csv`: Feature-engineered dataset
+Overview:
+Frontend/index.js: First JS file that runs when application starts, calls App.js
+App.js: controls routing (e.g. /MA/Boston/Ashmont-250) and imports components
+   Home.JS: Lets users search for a property using State, City, ZIP code, or address
+      SearchBar
 
-## Customization
-You can customize the application by modifying the `app.py` file. The application is built with Streamlit, which makes it easy to add new features and visualizations.
 
-## Troubleshooting
-- If the model file is not found, the application will create a simple model for demonstration purposes
-- Ensure all dependencies are installed correctly
-- Check that the file paths in the application match your deployment environment
+Frontend/PropertyDetails.js: React component that displays detailed info about a specific property. 
+Frontend/PropertyListings.js
+
+Frontend/PropertyInfo.js: Currently unused Component that Bhav made. 
+
+Detailed:
+Frontend/PropertyDetails.js: React component that displays detailed info about a specific property. 
+   Here's what it does:
+   Data Fetching:
+   Uses useParams to get the property ID from the URL
+   Calls getPropertyDetails from realtyApi.js to fetch property data
+   Shows a loading spinner while data is being fetched
+   Navigation:
+   Has a back button to return to the previous page
+   Uses React Router's useNavigate for navigation
+   UI Components:
+   Displays a large property image
+   Shows key property details:
+   Price (formatted with commas)
+   Number of bedrooms
+   Number of bathrooms
+   Square footage
+   Full address
+

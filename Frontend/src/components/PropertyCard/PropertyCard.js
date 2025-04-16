@@ -19,7 +19,24 @@ const PropertyCard = ({ property }) => {
   const [imageLoading, setImageLoading] = useState(true);
 
   const handleClick = () => {
-    navigate('/property-info', { state: property });
+    // Get address components
+    const address = property?.location?.address?.line || property?.address?.line;
+    const city = property?.location?.address?.city || property?.address?.city;
+    const state = property?.location?.address?.state_code || property?.address?.state_code;
+
+    if (address && city && state) {
+      // Format the address for URL
+      const formattedAddress = address.toLowerCase().replace(/[,\s]+/g, '-');
+      const formattedCity = city.toLowerCase().replace(/\s+/g, '-');
+      const formattedState = state.toLowerCase();
+      
+      // Navigate to the proper route
+      navigate(`/${formattedState}/${formattedCity}/${formattedAddress}`, {
+        state: property
+      });
+    } else {
+      console.error('Missing address information:', property);
+    }
   };
 
   const getImageUrl = () => {
@@ -45,6 +62,7 @@ const PropertyCard = ({ property }) => {
 
   return (
     <Card 
+      onClick={handleClick}
       sx={{ 
         height: '100%', 
         display: 'flex', 
@@ -56,7 +74,6 @@ const PropertyCard = ({ property }) => {
           boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
         }
       }}
-      onClick={handleClick}
     >
       {imageLoading && (
         <Skeleton 

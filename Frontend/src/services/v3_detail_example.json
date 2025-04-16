@@ -1,0 +1,138 @@
+{
+  "__typename": "SearchHome",
+  "property_id": "4090891077",
+  "listing_id": "2980640987",
+  "plan_id": null,
+  "status": "for_sale",
+  "photo_count": 5,
+  "branding": [
+    {
+      "__typename": "Branding",
+      "photo": null,
+      "name": "Coldwell Banker Realty - Milton",
+      "phone": null,
+      "link": null
+    }
+  ],
+  "location": {
+    "__typename": "SearchHomeLocation",
+    "address": {
+      "__typename": "SearchHomeAddress",
+      "city": "Boston",
+      "line": "43 Claybourne St",
+      "street_name": "Claybourne",
+      "street_number": "43",
+      "street_suffix": "St",
+      "country": "USA",
+      "postal_code": "02124",
+      "state_code": "MA",
+      "state": "Massachusetts",
+      "coordinate": {
+        "__typename": "Coordinate",
+        "lat": 42.298127,
+        "lon": -71.072072,
+        "accuracy": null
+      }
+    },
+    "street_view_url": "https://maps.googleapis.com/maps/api/streetview?channel=rdc-streetview&client=gme-movesalesinc&location=43%20Claybourne%20St%2C%20Boston%2C%20MA%2002124&size=640x480&source=outdoor&signature=zTzSuV_yFBiXCXGI9ymqKTdvNdQ=",
+    "county": {
+      "__typename": "HomeCounty",
+      "fips_code": "25025"
+    }
+  },
+  "open_houses": null,
+  "description": {
+    "__typename": "SearchHomeDescription",
+    "sub_type": null,
+    "type": "multi_family",
+    "beds": 6,
+    "baths": 3,
+    "lot_sqft": 4621,
+    "sqft": 3576,
+    "beds_max": null,
+    "beds_min": null,
+    "sqft_max": null,
+    "sqft_min": null,
+    "baths_full": 3,
+    "baths_half": null,
+    "baths_min": null,
+    "baths_max": null,
+    "baths_full_calc": 3,
+    "baths_partial_calc": null
+  },
+  "virtual_tours": null,
+  "matterport": false,
+  "advertisers": [
+    {
+      "__typename": "HomeAdvertiser",
+      "fulfillment_id": "1471298",
+      "name": "Paige Thompson",
+      "email": "paige.thompson@cbrealty.com",
+      "href": "www.mybostoncondo.com",
+      "slogan": "Always available to answer your call.",
+      "type": "seller"
+    }
+  ],
+  "flags": {
+    "__typename": "HomeFlags",
+    "is_price_reduced": null,
+    "is_new_construction": null,
+    "is_foreclosure": null,
+    "is_plan": null,
+    "is_new_listing": true,
+    "is_coming_soon": null,
+    "is_contingent": null,
+    "is_pending": null
+  },
+  "source": {
+    "__typename": "MlsSource",
+    "agents": [
+      {
+        "__typename": "MlsAgent",
+        "id": "BSMA",
+        "agent_id": "CT004073",
+        "agent_name": "Paige Thompson",
+        "office_id": "AN6223",
+        "office_name": null
+      }
+    ],
+    "id": "BSMA",
+    "type": "mls",
+    "spec_id": null,
+    "plan_id": null,
+    "listing_href": null,
+    "listing_id": "73360468"
+  },
+  "pet_policy": null,
+  "community": null,
+  "primary_photo": {
+    "__typename": "HomePhoto",
+    "href": "https://ap.rdcpix.com/698bda93d076566a5158ca779206b8bel-m1752918763s.jpg"
+  },
+  "href": "https://www.realtor.com/realestateandhomes-detail/43-Claybourne-St_Dorchester-Center_MA_02124_M40908-91077",
+  "list_price": 1100000,
+  "list_price_min": null,
+  "list_price_max": null,
+  "price_reduced_amount": null,
+  "estimate": null,
+  "lead_attributes": {
+    "__typename": "LeadAttributes",
+    "lead_type": "co_broke",
+    "show_contact_an_agent": true,
+    "opcity_lead_attributes": {
+      "__typename": "OpCityLeadAttributes",
+      "flip_the_market_enabled": true
+    }
+  },
+  "last_sold_date": "2003-12-24",
+  "list_date": "2025-04-16T16:51:42.000000Z",
+  "products": {
+    "__typename": "ProductSummary",
+    "brand_name": "basic_opt_in",
+    "products": [
+      "core.agent",
+      "co_broke"
+    ]
+  },
+  "last_sold_price": 438000
+}

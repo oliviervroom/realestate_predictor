@@ -1,8 +1,8 @@
 // Working version - only updated when changes are confirmed working
-export const WORKING_VERSION = '1.1.9';
+export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 0;
+export const EDIT_VERSION = "1.0.9";
 
 // Version details for changelog
 export const versionDetails = {

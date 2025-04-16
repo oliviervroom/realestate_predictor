@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, Popover, Slider, TextField, Typography, InputAdornment } from '@mui/material';
+import { Box, Button, Popover, Slider, TextField, Typography } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { useTheme } from '@mui/material/styles';
 
 const MIN_SQFT = 0;
 const MAX_SQFT = 4000;

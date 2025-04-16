@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 import { Frame } from './screens/Frame';
 import Home from './screens/Home/Home';
 import Properties from './screens/Properties/Properties';
-import PropertyDetails from './screens/PropertyDetails/PropertyDetails';
+import PropertyInfo from './screens/PropertyInfo/PropertyInfo';
 import PropertyListings from './screens/propertyListings/PropertyListings';
 import Changelog from './components/Changelog/Changelog';
 
@@ -17,8 +17,8 @@ function App() {
           <Route path="/zip/:postal_code" element={<Properties />} />
           <Route path="/:state" element={<Properties />} />
           <Route path="/:state/:city" element={<Properties />} />
-          <Route path="/:state/:city/:address" element={<PropertyDetails />} />
-          <Route path="/property/:id" element={<PropertyDetails />} />
+          <Route path="/:state/:city/:address" element={<PropertyInfo />} />
+          <Route path="/property/:id" element={<PropertyInfo />} />
           <Route path="/property-listings" element={<PropertyListings />} />
           <Route path="/changelog" element={<Changelog />} />
         </Routes>
