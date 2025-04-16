@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -6,15 +6,41 @@ import {
   CardMedia,
   Typography,
   Box,
-  Chip
+  Chip,
+  Skeleton
 } from '@mui/material';
 import { LocationOn, Bed, Bathtub, SquareFoot } from '@mui/icons-material';
 
+const DEFAULT_IMAGE = '/default-property.png';
+
 const PropertyCard = ({ property }) => {
   const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   const handleClick = () => {
     navigate('/property-info', { state: property });
+  };
+
+  const getImageUrl = () => {
+    if (imageError) return DEFAULT_IMAGE;
+    return property?.primary_photo?.href || 
+           property?.photos?.[0]?.href || 
+           property?.image || 
+           DEFAULT_IMAGE;
+  };
+
+  const handleImageError = (e) => {
+    console.warn('Property image failed to load:', {
+      propertyId: property?.property_id,
+      attemptedUrl: e.target.src
+    });
+    setImageError(true);
+    e.target.src = DEFAULT_IMAGE;
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
   };
 
   return (
@@ -32,13 +58,24 @@ const PropertyCard = ({ property }) => {
       }}
       onClick={handleClick}
     >
+      {imageLoading && (
+        <Skeleton 
+          variant="rectangular" 
+          height={200}
+          animation="wave"
+          sx={{ bgcolor: 'grey.100' }}
+        />
+      )}
       <CardMedia
         component="img"
-        height="200"
-        image={property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image || '/genbcs-24082644-0-jpg.png'}
-        alt="Property"
-        onError={(e) => {
-          e.target.src = '/genbcs-24082644-0-jpg.png';
+        height={200}
+        image={getImageUrl()}
+        alt={property?.location?.address?.line || 'Property'}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        sx={{ 
+          display: imageLoading ? 'none' : 'block',
+          objectFit: 'cover'
         }}
       />
       <CardContent sx={{ flexGrow: 1 }}>

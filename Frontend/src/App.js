@@ -2,7 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { Frame } from './screens/Frame';
-import PropertyInfo from './screens/PropertyInfo/PropertyInfo';
+import Home from './screens/Home/Home';
+import Properties from './screens/Properties/Properties';
+import PropertyDetails from './screens/PropertyDetails/PropertyDetails';
 import PropertyListings from './screens/propertyListings/PropertyListings';
 import Changelog from './components/Changelog/Changelog';
 
@@ -11,9 +13,13 @@ function App() {
     <Router>
       <Box>
         <Routes>
-          <Route path="/" element={<Frame />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/zip/:postal_code" element={<Properties />} />
+          <Route path="/:state" element={<Properties />} />
+          <Route path="/:state/:city" element={<Properties />} />
+          <Route path="/:state/:city/:address" element={<PropertyDetails />} />
+          <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/property-listings" element={<PropertyListings />} />
-          <Route path="/property-info" element={<PropertyInfo />} />
           <Route path="/changelog" element={<Changelog />} />
         </Routes>
       </Box>

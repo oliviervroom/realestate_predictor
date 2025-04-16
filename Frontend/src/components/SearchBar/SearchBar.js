@@ -1,161 +1,244 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, TextField, Paper, List, ListItem, ListItemText, IconButton } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { getLocationSuggestions } from '../../services/realtyApi';
-import Loader from '../Loader/Loader';
-import debounce from 'lodash.debounce';
+import { Box, Autocomplete, TextField, InputAdornment, Typography, Paper, Card, CardMedia, CardContent } from '@mui/material';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import HomeIcon from '@mui/icons-material/Home';
+import LocationCityIcon from '@mui/icons-material/LocationCity';
+import { getLocationSuggestions, searchProperties } from '../../services/realtyApi';
+import debounce from 'lodash/debounce';
 
-const SearchBar = ({ onSearch }) => {
+const SearchBar = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
 
-  const handleSearch = useCallback(() => {
-    if (searchTerm.trim()) {
-      setShowSuggestions(false);
-      onSearch(searchTerm);
-    }
-  }, [searchTerm, onSearch]);
-
-  const handleKeyPress = (event) => {
-    if (event.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const debouncedSearch = useCallback(
-    debounce(async (value) => {
-      if (value.length < 2) {
-        setSuggestions([]);
-        setShowSuggestions(false);
+  // Fetch suggestions using the auto-complete endpoint
+  const fetchSuggestions = useCallback(
+    debounce(async (query) => {
+      if (!query || query.length < 2) {
+        setOptions([]);
+        setPreview(null);
         return;
       }
 
-      setIsLoading(true);
+      setLoading(true);
       try {
-        const results = await getLocationSuggestions(value);
-        // Only update if the component is still mounted and the search term hasn't changed
-        if (Array.isArray(results)) {
-          const formattedSuggestions = results
-            .filter(item => item.city || item.state)
-            .map(item => ({
-              city: item.city || '',
-              state: item.state || '',
-              state_code: item.state_code || '',
-              _id: item._id || `${item.city}-${item.state_code}`
-            }))
-            .slice(0, 5);
-          
-          setSuggestions(formattedSuggestions);
-          setShowSuggestions(formattedSuggestions.length > 0);
+        const suggestions = await getLocationSuggestions(query);
+        setOptions(suggestions || []);
+
+        // If we have a full address, try to get a preview
+        if (suggestions && suggestions.length > 0) {
+          const firstSuggestion = suggestions[0];
+          if (firstSuggestion.line && firstSuggestion.city && firstSuggestion.state_code) {
+            const previewResult = await searchProperties({
+              address: firstSuggestion.line,
+              city: firstSuggestion.city,
+              state_code: firstSuggestion.state_code,
+              limit: 1
+            });
+            if (previewResult.success && previewResult.processedData.length > 0) {
+              setPreview(previewResult.processedData[0]);
+            } else {
+              setPreview(null);
+            }
+          } else {
+            setPreview(null);
+          }
+        } else {
+          setPreview(null);
         }
       } catch (error) {
         console.error('Error fetching suggestions:', error);
-        setSuggestions([]);
-        setShowSuggestions(false);
+        setOptions([]);
+        setPreview(null);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     }, 300),
     []
   );
 
-  const handleChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    debouncedSearch(value);
+  // Handle location selection and navigation
+  const handleLocationSelect = (event, value) => {
+    if (!value) return;
+
+    // Handle direct postal code input
+    if (typeof value === 'string' && /^\d{5}$/.test(value)) {
+      navigate(`/zip/${value}`);
+      return;
+    }
+
+    // Parse location data and navigate
+    if (value.line && value.city && value.state_code) {
+      // Full address - this should take precedence
+      const formattedAddress = value.line.toLowerCase().replace(/[,\s]+/g, '-');
+      const formattedCity = value.city.toLowerCase().replace(/\s+/g, '-');
+      const formattedState = value.state_code.toLowerCase();
+      navigate(`/${formattedState}/${formattedCity}/${formattedAddress}`);
+    } else if (value.postal_code) {
+      navigate(`/zip/${value.postal_code}`);
+    } else if (value.city && value.state_code) {
+      // City
+      const path = [
+        value.state_code.toLowerCase(),
+        value.city.toLowerCase().replace(/\s+/g, '-')
+      ].join('/');
+      navigate(`/${path}`);
+    } else if (value.state_code) {
+      // State only
+      navigate(`/${value.state_code.toLowerCase()}`);
+    }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    const locationString = `${suggestion.city}, ${suggestion.state_code}`;
-    setSearchTerm(locationString);
-    setSuggestions([]);
-    setShowSuggestions(false);
-    onSearch(locationString);
+  // Format the display of suggestions
+  const getOptionLabel = (option) => {
+    if (typeof option === 'string') return option;
+    
+    if (option.postal_code) {
+      return `${option.postal_code} ${option.city ? `(${option.city}, ${option.state_code})` : ''}`;
+    }
+    if (option.line && option.city && option.state_code) {
+      return `${option.line}, ${option.city}, ${option.state_code}`;
+    }
+    if (option.city && option.state_code) {
+      return `${option.city}, ${option.state_code}`;
+    }
+    if (option.state_code) {
+      return option.state_code;
+    }
+    return '';
+  };
+
+  // Custom render option to show icons and format text
+  const renderOption = (props, option) => {
+    let icon = <LocationOnIcon />;
+    let primaryText = '';
+    let secondaryText = '';
+
+    if (option.line) {
+      icon = <HomeIcon />;
+      primaryText = option.line;
+      secondaryText = `${option.city}, ${option.state_code}`;
+    } else if (option.city) {
+      icon = <LocationCityIcon />;
+      primaryText = option.city;
+      secondaryText = option.state_code;
+    } else if (option.postal_code) {
+      primaryText = `ZIP ${option.postal_code}`;
+      secondaryText = option.city ? `${option.city}, ${option.state_code}` : '';
+    }
+
+    return (
+      <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ mr: 1, color: 'action.active' }}>{icon}</Box>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="body1">{primaryText}</Typography>
+          {secondaryText && (
+            <Typography variant="body2" color="text.secondary">
+              {secondaryText}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    );
   };
 
   return (
-    <Box sx={{ position: 'relative', width: '100%' }}>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          fullWidth
-          value={searchTerm}
-          onChange={handleChange}
-          onKeyPress={handleKeyPress}
-          placeholder="Enter a city and state (e.g., Manchester, NH)"
-          variant="outlined"
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              color: 'white',
-              '& fieldset': {
-                borderColor: 'rgba(255, 255, 255, 0.5)',
+    <Box>
+      <Autocomplete
+        freeSolo
+        options={options}
+        getOptionLabel={getOptionLabel}
+        renderOption={renderOption}
+        inputValue={inputValue}
+        onInputChange={(event, newValue) => {
+          setInputValue(newValue);
+          fetchSuggestions(newValue);
+        }}
+        onChange={handleLocationSelect}
+        loading={loading}
+        filterOptions={(x) => x}
+        isOptionEqualToValue={(option, value) => {
+          if (typeof value === 'string') return false;
+          return option.id === value.id;
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            fullWidth
+            placeholder="Search by address, neighborhood, city, ZIP code, or state"
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <LocationOnIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                backgroundColor: 'background.paper',
+                '&:hover': {
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'primary.main',
+                  },
+                },
               },
-              '&:hover fieldset': {
-                borderColor: 'white',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: 'white',
-              },
-            },
-            '& .MuiInputBase-input::placeholder': {
-              color: 'rgba(255, 255, 255, 0.7)',
-            },
-          }}
-        />
-        <IconButton 
-          onClick={handleSearch}
-          sx={{ 
-            color: 'white',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
-          }}
-        >
-          <SearchIcon />
-        </IconButton>
-      </Box>
-
-      {isLoading && <Loader />}
-
-      {showSuggestions && suggestions.length > 0 && (
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            position: 'absolute', 
-            top: '100%', 
-            left: 0, 
-            right: 0, 
-            zIndex: 1000,
-            maxHeight: '300px',
-            overflow: 'auto',
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}
-        >
-          <List>
-            {suggestions.map((suggestion, index) => (
-              <ListItem
-                key={suggestion._id || index}
-                button
-                onClick={() => handleSuggestionClick(suggestion)}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  }
-                }}
-              >
-                <ListItemText 
-                  primary={`${suggestion.city}, ${suggestion.state_code}`}
-                  sx={{ color: 'white' }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
+            }}
+          />
+        )}
+        PaperComponent={({ children, ...props }) => (
+          <Paper {...props}>
+            {children}
+            {preview && (
+              <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>Property Preview</Typography>
+                <Card sx={{ display: 'flex', mb: 1 }}>
+                  {preview.primary_photo?.href ? (
+                    <CardMedia
+                      component="img"
+                      sx={{ width: 100, height: 100, objectFit: 'cover' }}
+                      image={preview.primary_photo.href}
+                      alt={preview.location?.address?.line || 'Property preview'}
+                      onError={(e) => {
+                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.src = 'https://placehold.co/100x100?text=No+Image';
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        width: 100,
+                        height: 100,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'grey.100'
+                      }}
+                    >
+                      <HomeIcon sx={{ color: 'grey.400', fontSize: 40 }} />
+                    </Box>
+                  )}
+                  <CardContent sx={{ flex: 1, p: 1 }}>
+                    <Typography variant="body2" noWrap>
+                      {preview.location?.address?.line}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {preview.location?.address?.city}, {preview.location?.address?.state_code}
+                    </Typography>
+                    <Typography variant="body2" color="primary">
+                      ${preview.list_price?.toLocaleString()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Box>
+            )}
+          </Paper>
+        )}
+      />
     </Box>
   );
 };
