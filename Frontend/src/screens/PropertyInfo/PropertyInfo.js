@@ -19,6 +19,7 @@ import MapComponent from './MapComponent';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import ApiDebugInfo from '../../components/ApiDebugInfo/ApiDebugInfo';
 import { VERSIONS } from '../../version';
+import PropertyMap from '../../components/Map/PropertyMap';
 
 const PropertyInfo = () => {
   const location = useLocation();
@@ -186,10 +187,15 @@ const PropertyInfo = () => {
                   src={(() => {
                     const photoUrl = property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image;
                     if (!photoUrl) return '/genbcs-24082644-0-jpg.png';
+                    
                     // Replace thumbnail suffixes with high-quality version
-                    return photoUrl.replace(/-m(\d+)s\.jpg/, '-m$1x.jpg')
-                                 .replace(/-t\.jpg/, '-o.jpg')
-                                 .replace(/s\.jpg$/, 'od.jpg');
+                    return photoUrl
+                      .replace(/-m(\d+)s\.jpg/, '-m$1x.jpg')  // Replace medium size with extra large
+                      .replace(/-t\.jpg/, '-o.jpg')            // Replace thumbnail with original
+                      .replace(/s\.jpg$/, 'od.jpg')            // Replace small with original download
+                      .replace(/-m(\d+)\.jpg/, '-m$1x.jpg')    // Replace medium with extra large
+                      .replace(/-l\.jpg/, '-o.jpg')            // Replace large with original
+                      .replace(/-p\.jpg/, '-o.jpg');           // Replace preview with original
                   })()}
                   alt="Property"
                   onError={(e) => {
@@ -386,10 +392,9 @@ const PropertyInfo = () => {
             {/* Map Section */}
             <Box sx={{ mb: 6 }}>
               <Typography variant="h5" fontWeight="bold">Location on Map</Typography>
-              <MapComponent
+              <PropertyMap
+                properties={property}
                 center={coordinates}
-                price={property?.price || property?.list_price || property?.estimate?.estimate}
-                nearbyProperties={nearbyProperties}
               />
             </Box>
           </>

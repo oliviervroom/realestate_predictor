@@ -86,9 +86,23 @@ const PropertyCard = ({ property }) => {
       <CardMedia
         component="img"
         height={200}
-        image={getImageUrl()}
+        image={(() => {
+          const photoUrl = property?.primary_photo?.href || property?.photos?.[0]?.href || property?.image;
+          if (!photoUrl) return '/genbcs-24082644-0-jpg.png';
+          
+          // Replace thumbnail suffixes with high-quality version
+          return photoUrl
+            .replace(/-m(\d+)s\.jpg/, '-m$1x.jpg')  // Replace medium size with extra large
+            .replace(/-t\.jpg/, '-o.jpg')            // Replace thumbnail with original
+            .replace(/s\.jpg$/, 'od.jpg')            // Replace small with original download
+            .replace(/-m(\d+)\.jpg/, '-m$1x.jpg')    // Replace medium with extra large
+            .replace(/-l\.jpg/, '-o.jpg')            // Replace large with original
+            .replace(/-p\.jpg/, '-o.jpg');           // Replace preview with original
+        })()}
         alt={property?.location?.address?.line || 'Property'}
-        onError={handleImageError}
+        onError={(e) => {
+          e.target.src = '/genbcs-24082644-0-jpg.png';
+        }}
         onLoad={handleImageLoad}
         sx={{ 
           display: imageLoading ? 'none' : 'block',

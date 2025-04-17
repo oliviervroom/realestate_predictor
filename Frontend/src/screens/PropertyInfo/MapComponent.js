@@ -1,25 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Map, GoogleApiWrapper, Marker, InfoWindow } from 'google-maps-react';
 
-// Initial fallback location
-const initialPosition = {
-  lat: 53.54992,
-  lng: 10.00678,
-};
-
-const MapComponent = ({ google, location, price }) => {
-  const [markerPosition, setMarkerPosition] = useState(initialPosition);
+const MapComponent = ({ google, center, price, property }) => {
   const [showingInfoWindow, setShowingInfoWindow] = useState(false);
   const [activeMarker, setActiveMarker] = useState(null);
-
-  useEffect(() => {
-    if (location?.address?.coordinate?.lat && location?.address?.coordinate?.lon) {
-      setMarkerPosition({
-        lat: location.address.coordinate.lat,
-        lng: location.address.coordinate.lon
-      });
-    }
-  }, [location]);
 
   const onMarkerClick = (props, marker) => {
     setActiveMarker(marker);
@@ -41,8 +25,8 @@ const MapComponent = ({ google, location, price }) => {
       <Map
         google={google}
         zoom={14}
-        initialCenter={markerPosition}
-        center={markerPosition}
+        initialCenter={center}
+        center={center}
         style={{
           width: '80%',
           height: '400px',
@@ -51,7 +35,7 @@ const MapComponent = ({ google, location, price }) => {
         }}
       >
         <Marker
-          position={markerPosition}
+          position={center}
           onClick={onMarkerClick}
           icon={{
             url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
@@ -80,10 +64,11 @@ const MapComponent = ({ google, location, price }) => {
           onClose={onClose}
         >
           <div>
-            <h3>Property Info</h3>
-            <p>{formattedPrice}</p>
-            <p>Lat: {markerPosition.lat}</p>
-            <p>Lng: {markerPosition.lng}</p>
+            <h3>Property Details</h3>
+            <p>Price: {formattedPrice}</p>
+            <p>Address: {property?.location?.address?.line || 'Address not available'}</p>
+            <p>City: {property?.location?.address?.city || 'City not available'}</p>
+            <p>State: {property?.location?.address?.state_code || 'State not available'}</p>
           </div>
         </InfoWindow>
       </Map>

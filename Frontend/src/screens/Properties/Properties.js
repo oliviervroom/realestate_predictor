@@ -25,7 +25,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SearchBar from '../../components/SearchBar/SearchBar';
 import ApiDebugInfo from '../../components/ApiDebugInfo/ApiDebugInfo';
 import ViewToggle from '../../components/ViewToggle/ViewToggle';
-import PropertyMap from '../../components/PropertyMap/PropertyMap';
+import PropertyMap from '../../components/Map/PropertyMap';
 import PropertyCard from '../../components/PropertyCard/PropertyCard';
 import BedBathToggle from '../../components/BedBathToggle/BedBathToggle';
 import PriceToggle from '../../components/PriceToggle/PriceToggle';
@@ -184,7 +184,7 @@ const Properties = () => {
       {properties.length > 0 ? (
         <Grid container spacing={3}>
           {properties.map((property) => (
-            <Grid item xs={12} sm={6} md={4} key={property.property_id}>
+            <Grid item xs={12} sm={6} key={property.property_id}>
               <PropertyCard property={property} />
             </Grid>
           ))}
@@ -295,15 +295,25 @@ const Properties = () => {
         {/* View content */}
         {view === 'map' ? (
           <Box sx={{ flex: 1, minHeight: 500 }}>
-            <PropertyMap properties={properties} />
+            <PropertyMap 
+              properties={properties}
+              height="600px"
+              width="100%"
+              zoom={12}
+            />
           </Box>
         ) : view === 'split' ? (
           <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 500 }}>
             <Box sx={{ flex: 1, overflowY: 'auto' }}>
               {renderProperties()}
             </Box>
-            <Box sx={{ flex: 1, position: 'relative' }}>
-              <PropertyMap properties={properties} />
+            <Box sx={{ flex: 1, position: 'relative', height: '600px' }}>
+              <PropertyMap 
+                properties={properties}
+                height="100%"
+                width="100%"
+                zoom={12}
+              />
             </Box>
           </Box>
         ) : (
