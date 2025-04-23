@@ -32,6 +32,7 @@ import PriceToggle from '../../components/PriceToggle/PriceToggle';
 import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFootageToggle';
 import { searchProperties } from '../../services/realtyApi';
 import { WORKING_VERSION, EDIT_VERSION } from '../../version';
+import Header from '../../components/Header';
 
 // Move buildFilters outside the component to avoid dependency issues
 const buildFilters = (stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft) => {
@@ -198,132 +199,125 @@ const Properties = () => {
   const viewInfo = getViewInfo();
 
   return (
-    <Container maxWidth="lg" sx={{ position: 'relative', minHeight: '100vh', pb: 4 }}>
-      <ViewToggle view={view} onViewChange={setView} />
-      
-      <Box sx={{ 
-        py: 3,
-        display: 'flex',
-        flexDirection: 'column',
-        height: view === 'map' ? '100vh' : 'auto'
-      }}>
-        {/* Version info */}
-        <Typography variant="caption" display="block" gutterBottom>
-          Working {WORKING_VERSION} (Edit {EDIT_VERSION})
-        </Typography>
-
-        {/* Header with search */}
-        <Box sx={{ mb: 3 }}>
-          <SearchBar />
-        </Box>
-
-        {/* Filters */}
+    <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
+      <Header />
+      <Container maxWidth="lg" sx={{ position: 'relative', minHeight: '100vh', pb: 4 }}>
+        <ViewToggle view={view} onViewChange={setView} />
+        
         <Box sx={{ 
-          mb: 3, 
-          display: 'flex', 
-          gap: 2, 
-          flexWrap: 'wrap',
-          bgcolor: 'rgba(34, 34, 34, 0.9)',
-          p: 2,
-          borderRadius: 1
+          py: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          height: view === 'map' ? '100vh' : 'auto'
         }}>
-          <PriceToggle
-            value={price}
-            onChange={setPrice}
-          />
-          <BedBathToggle
-            bedsValue={beds}
-            bathsValue={baths}
-            onBedsChange={setBeds}
-            onBathsChange={setBaths}
-          />
-          <SquareFootageToggle
-            value={sqft}
-            onChange={setSqft}
-          />
-        </Box>
+          {/* Version info */}
+          <Typography variant="caption" display="block" gutterBottom>
+            Working {WORKING_VERSION} (Edit {EDIT_VERSION})
+          </Typography>
 
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          separator={<NavigateNextIcon fontSize="small" />}
-          sx={{ mb: 2 }}
-        >
-          {getBreadcrumbs().map((crumb, index) => (
-            crumb.link ? (
-              <Link
-                key={index}
-                component={RouterLink}
-                to={crumb.link}
-                color="inherit"
-              >
-                {crumb.label}
-              </Link>
-            ) : (
-              <Typography key={index} color="text.primary">
-                {crumb.label}
-              </Typography>
-            )
-          ))}
-        </Breadcrumbs>
-
-        {/* Main content */}
-        <Typography variant="h4" gutterBottom>
-          {viewInfo.title}
-        </Typography>
-        <Typography variant="body1" color="text.secondary" gutterBottom>
-          {viewInfo.subtitle}
-        </Typography>
-
-        {/* Loading and error states */}
-        {loading && (
-          <Box sx={{ mt: 4 }}>
-            <Grid container spacing={3}>
-              {[1, 2, 3, 4, 5, 6].map((placeholder) => (
-                <Grid item xs={12} sm={6} md={4} key={placeholder}>
-                  <Box sx={{ height: 350, bgcolor: 'grey.100', borderRadius: 1 }} />
-                </Grid>
-              ))}
-            </Grid>
+          {/* Header with search */}
+          <Box sx={{ mb: 3 }}>
+            <SearchBar />
           </Box>
-        )}
-        {error && (
-          <Box sx={{ mt: 4 }}>
-            <Typography color="error">{error}</Typography>
-          </Box>
-        )}
 
-        {/* View content */}
-        {view === 'map' ? (
-          <Box sx={{ flex: 1, minHeight: 500 }}>
-            <PropertyMap 
-              properties={properties}
-              height="600px"
-              width="100%"
-              zoom={12}
+          {/* Filters */}
+          <Box sx={{ 
+            mb: 3, 
+            display: 'flex', 
+            gap: 2, 
+            flexWrap: 'wrap',
+            bgcolor: 'rgba(34, 34, 34, 0.9)',
+            p: 2,
+            borderRadius: 1
+          }}>
+            <PriceToggle
+              value={price}
+              onChange={setPrice}
+            />
+            <BedBathToggle
+              bedsValue={beds}
+              bathsValue={baths}
+              onBedsChange={setBeds}
+              onBathsChange={setBaths}
+            />
+            <SquareFootageToggle
+              value={sqft}
+              onChange={setSqft}
             />
           </Box>
-        ) : view === 'split' ? (
-          <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 500 }}>
-            <Box sx={{ flex: 1, overflowY: 'auto' }}>
-              {renderProperties()}
-            </Box>
-            <Box sx={{ flex: 1, position: 'relative', height: '600px' }}>
-              <PropertyMap 
-                properties={properties}
-                height="100%"
-                width="100%"
-                zoom={12}
-              />
-            </Box>
-          </Box>
-        ) : (
-          renderProperties()
-        )}
 
-        {/* API Debug Information */}
-        <ApiDebugInfo debugInfo={debugInfo} />
-      </Box>
-    </Container>
+          {/* Breadcrumbs */}
+          <Breadcrumbs 
+            separator={<NavigateNextIcon fontSize="small" />}
+            sx={{ mb: 2 }}
+          >
+            {getBreadcrumbs().map((crumb, index) => (
+              crumb.link ? (
+                <Link
+                  key={index}
+                  component={RouterLink}
+                  to={crumb.link}
+                  color="inherit"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <Typography key={index} color="text.primary">
+                  {crumb.label}
+                </Typography>
+              )
+            ))}
+          </Breadcrumbs>
+
+          {/* Main content */}
+          <Typography variant="h4" gutterBottom>
+            {viewInfo.title}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" gutterBottom>
+            {viewInfo.subtitle}
+          </Typography>
+
+          {/* Loading and error states */}
+          {loading && (
+            <Box sx={{ mt: 4 }}>
+              <Grid container spacing={3}>
+                {[1, 2, 3, 4, 5, 6].map((placeholder) => (
+                  <Grid item xs={12} sm={6} md={4} key={placeholder}>
+                    <Box sx={{ height: 350, bgcolor: 'grey.100', borderRadius: 1 }} />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+          {error && (
+            <Box sx={{ mt: 4 }}>
+              <Typography color="error">{error}</Typography>
+            </Box>
+          )}
+
+          {/* View content */}
+          {view === 'map' ? (
+            <Box sx={{ flex: 1, minHeight: 500 }}>
+              <PropertyMap properties={properties} />
+            </Box>
+          ) : view === 'split' ? (
+            <Box sx={{ display: 'flex', gap: 2, flex: 1, minHeight: 500 }}>
+              <Box sx={{ flex: 1, overflowY: 'auto' }}>
+                {renderProperties()}
+              </Box>
+              <Box sx={{ flex: 1, position: 'relative' }}>
+                <PropertyMap properties={properties} />
+              </Box>
+            </Box>
+          ) : (
+            renderProperties()
+          )}
+
+          {/* API Debug Information */}
+          <ApiDebugInfo debugInfo={debugInfo} />
+        </Box>
+      </Container>
+    </Box>
   );
 };
 
