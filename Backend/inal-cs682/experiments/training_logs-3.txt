@@ -1,0 +1,20 @@
+Hyperparameters
+{
+    "train": {
+      "epochs": 10000,
+      "batch_size": 32,
+      "learning_rate": 0.0001,
+      "early_stopping_patience": 1000,
+      "lr_patience": 100
+    },
+    "model": {
+      "n_layers": 8,
+      "n_neurons": 2048,
+      "activation": "relu",
+      "l2_reg": 0.01,
+      "dropout": 0.2,
+      "eps_norm": 1e-6
+    }
+  }
+
+Logger was added after training started.
