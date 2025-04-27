@@ -20,6 +20,9 @@ import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
 import ApiDebugInfo from '../../components/ApiDebugInfo/ApiDebugInfo';
 import { VERSIONS } from '../../version';
 import PropertyMap from '../../components/Map/PropertyMap';
+import { getPredictedRent } from '../../services/realtyApi';
+import { Dialog, DialogTitle, DialogContent } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 const PropertyInfo = () => {
   const location = useLocation();
@@ -33,6 +36,7 @@ const PropertyInfo = () => {
   const [adjustedRent, setAdjustedRent] = useState(
     property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045)
   );
+  const [predictedRent, setPredictedRent] = useState(null);
   const [debugInfo, setDebugInfo] = useState({
     method: 'GET',
     endpoint: '/properties/v3/detail',
@@ -40,6 +44,25 @@ const PropertyInfo = () => {
     response: property
   });
 
+  const [open, setOpen] = useState(false);
+  const riskLevel = 'Medium'; // You can change this dynamically later (Low, Medium, High)
+
+  const riskColor = riskLevel === 'Low' ? 'success' : riskLevel === 'High' ? 'error' : 'warning';
+
+  const riskMessage = {
+    Low: 'This property shows a low investment risk based on current market data.',
+    Medium: 'This property shows a moderate investment risk. Proceed with some caution.',
+    High: 'This property shows a high investment risk. Carefully review before investing.'
+  };
+  const predictedRent1 = 2500;
+  const optimalRent = 2400;
+  const graphData = [
+    { rent: 2000, likelihood: 0.3 },
+    { rent: 2200, likelihood: 0.5 },
+    { rent: 2400, likelihood: 1 },
+    { rent: 2600, likelihood: 0.7 },
+    { rent: 2800, likelihood: 0.4 },
+  ];
   const handleCopyToClipboard = (text, label) => {
     navigator.clipboard.writeText(JSON.stringify(text, null, 2))
       .then(() => {
@@ -104,6 +127,35 @@ const PropertyInfo = () => {
     setDataErrors(errors);
   }, [property, currentPropertyId]);
 
+  useEffect(() => {
+    const fetchPredictedRent = async () => {
+      if (!property) return;
+  
+      const transformedInput = {
+        NEIGHBORHOOD: property?.location?.neighborhood_name || "Unknown",
+        ZIP_CODE: property?.location?.address?.postal_code || "00000",
+        PROP_TYPE: property?.prop_type || "other",
+        SQUARE_FEET: property?.description?.sqft || 0,
+        LOT_SIZE: property?.lot_size || 0,
+        NO_BEDROOMS: property?.description?.beds || 0,
+        TOTAL_BATHS: property?.description?.baths || 0,
+        TOTAL_PARKING_RN: property?.parking?.spaces || "0",
+        FURNISHED_RN: "No", // placeholder
+        PETS_ALLOWED_RN: "No", // placeholder
+        SEC_DEPOSIT_RN: "No", // placeholder
+        TERM_OF_RENTAL_RN: "12 months", // placeholder
+        RENT_FEE_INCLUDES_RN: "None", // placeholder
+        RENTAL_TERMS_RN: "Annual", // placeholder
+        LIST_PRICE: property?.price || property?.list_price || 0
+      };
+  
+      const rent = await getPredictedRent(transformedInput);
+      setPredictedRent(rent);
+    };
+  
+    fetchPredictedRent();
+  }, [property]);
+
   if (dataErrors.length > 0) {
     return (
       <Container>
@@ -153,6 +205,18 @@ const PropertyInfo = () => {
     lat: property?.address?.lat || property?.location?.address?.coordinate?.lat || 37.7749,
     lng: property?.address?.long || property?.location?.address?.coordinate?.lon || -122.4194
   };
+
+  function generateSuccessCurve(predictedRent) {
+    if (!predictedRent) return [];
+    const base = predictedRent;
+    const data = [];
+    for (let offset = -0.2; offset <= 0.2; offset += 0.02) {
+      const rent = base * (1 + offset);
+      const likelihood = Math.exp(-5 * Math.pow(offset, 2));
+      data.push({ rent, likelihood });
+    }
+    return data;
+  }
 
   return (
     <Box sx={{ bgcolor: '#faf9f8', minHeight: '100vh' }}>
@@ -312,16 +376,188 @@ const PropertyInfo = () => {
               )}
             </Box>
 
-            {/* Predicted Rental Income */}
+            {/* Predicted Rental Income
             <Box sx={{ mb: 6 }}>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>Predicted Rental Income</Typography>
-              <Box sx={{ bgcolor: '#e8f5e9', p: 3, borderRadius: 2, display: 'inline-block' }}>
-                <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
-                  ${baseRent} / month
+            <Typography variant="h5" fontWeight="bold" gutterBottom>Predicted Rental Income</Typography>
+            <Box sx={{ bgcolor: '#e8f5e9', p: 3, borderRadius: 2, display: 'inline-block' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                {predictedRent !== null ? `$${predictedRent.toLocaleString()}/mo` : 'Loading...'}
+              </Typography>
+            </Box>
+          </Box> */}
+
+          {/* Rental Income Analysis Section */}
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
+              Rental Income Analysis
+            </Typography>
+
+            {/* Predicted & Optimal Rent Cards */}
+            <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', my: 3 }}>
+              <Paper elevation={3} sx={{ p: 3, borderRadius: 3, flex: 1, minWidth: 200 }}>
+                <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                  Predicted Monthly Rent
                 </Typography>
-              </Box>
+                <Typography variant="h4" fontWeight="bold" color="primary">
+                  $2,500/mo
+                </Typography>
+              </Paper>
+
+              <Paper elevation={3} sx={{ p: 3, borderRadius: 3, flex: 1, minWidth: 200 }}>
+                <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                  Suggested Optimal Rent
+                </Typography>
+                <Typography variant="h4" fontWeight="bold" color="success.main">
+                  $2,400/mo
+                </Typography>
+              </Paper>
             </Box>
 
+            {/* Success Likelihood Curve */}
+            <Box sx={{ height: 300, mt: 4 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={generateSuccessCurve(2500)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                  <XAxis dataKey="rent" label={{ value: 'Rent Price ($)', position: 'insideBottom', dy: 10 }} />
+                  <YAxis tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+                  <ChartTooltip formatter={(value) => `${(value * 100).toFixed(0)}% Likelihood`} />
+                  <Line
+                    type="monotone"
+                    dataKey="likelihood"
+                    stroke="#228B22"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Box>
+              {/*Another version of predicted rent*/}
+              {/* <Box sx={{ mb: 6 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Predicted Rental Income
+                </Typography>
+                <Box
+                  onClick={() => setOpen(true)}
+                  sx={{
+                    bgcolor: '#e8f5e9',
+                    p: 3,
+                    borderRadius: 2,
+                    display: 'inline-block',
+                    cursor: 'pointer',
+                    transform: 'scale(1)',
+                    transition: 'transform 0.3s ease',
+                    '&:hover': {
+                      transform: 'scale(1.05)'
+                    }
+                  }}
+                >
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                    ${predictedRent1.toLocaleString()}/mo
+                  </Typography>
+                </Box>
+
+                <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+                  <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Rental Income Details
+                    <IconButton onClick={() => setOpen(false)}>
+                      <CloseIcon />
+                    </IconButton>
+                  </DialogTitle>
+
+                  <DialogContent>
+                    <Box sx={{ mb: 4 }}>
+                      <Typography variant="h6" fontWeight="bold">Predicted Rent:</Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>${predictedRent1.toLocaleString()}/mo</Typography>
+
+                      <Typography variant="h6" fontWeight="bold">Suggested Optimal Rent:</Typography>
+                      <Typography variant="body1">${optimalRent.toLocaleString()}/mo (Highest success likelihood)</Typography>
+                    </Box>
+
+                    <Box sx={{ height: 300 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={graphData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                          <XAxis dataKey="rent" label={{ value: 'Rent Price ($)', position: 'insideBottomRight', offset: -5 }} />
+                          <YAxis label={{ value: 'Success Likelihood', angle: -90, position: 'insideLeft' }} />
+                          <ChartTooltip />
+                          <Line type="monotone" dataKey="likelihood" stroke="#2e7d32" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </DialogContent>
+                </Dialog>
+              </Box> */}
+              {/* Rent Optimization Explanation */}
+              <Box sx={{ mb: 6, mt: 4 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Rent Optimization Explanation
+                </Typography>
+
+                <Paper elevation={3} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', position: 'relative' }}>
+                  
+                  {/* Renovation Friendly Tag - Top Right */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 16,
+                      right: 16,
+                      border: '1px solid',
+                      borderColor: property?.year_built && property.year_built < 2022 ? 'success.main' : 'error.main',
+                      color: property?.year_built && property.year_built < 2022 ? 'success.main' : 'error.main',
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      fontSize: '0.9rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {property?.year_built && property.year_built < 2022 ? '✔️ Renovation Friendly' : '❌ Not Renovation Friendly'}
+                  </Box>
+
+                  {/* Main Content Below */}
+                  <Typography variant="body1" color="text.secondary" paragraph sx={{ mt: 6 }}>
+                    The rental prediction is influenced by key property features:
+                  </Typography>
+
+                  <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', color: '#555' }}>
+                    <li><strong>📍 Location:</strong> {property?.location?.address?.city || "City Unknown"}, {property?.location?.address?.state_code || "State Unknown"}</li>
+                    <li><strong>📐 Square Footage:</strong> {property?.description?.sqft ? `${property.description.sqft} sqft` : "Not available"}</li>
+                    <li><strong>🛏️ Bedrooms:</strong> {property?.description?.beds || "N/A"} beds</li>
+                    <li><strong>🛁 Bathrooms:</strong> {property?.description?.baths || "N/A"} baths</li>
+                    <li><strong>🏠 Property Type:</strong> {property?.prop_type || "N/A"}</li>
+                    <li><strong>🚗 Parking:</strong> {property?.parking?.spaces ? `${property.parking.spaces} spaces` : "No dedicated parking"}</li>
+                    <li><strong>📄 Rental Terms:</strong> Annual Lease</li>
+                  </ul>
+
+                  <Typography variant="body2" color="text.secondary">
+                    📈 Based on these factors and local market trends, the rent is optimized to increase the chances of a successful rental within the competitive market.
+                  </Typography>
+
+                </Paper>
+              </Box>
+
+            {/*Risk Assessment */}
+              <Box sx={{ mb: 6 }}>
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                Risk Assessment
+              </Typography>
+
+              {/* Risk Level Chip */}
+              <Chip
+                label={`${riskLevel} Risk`}
+                color={riskColor}
+                sx={{ fontSize: '1rem', mb: 2, p: 2 }}
+              />
+
+              {/* Risk Message */}
+              <Typography variant="body1" color="text.secondary">
+                {riskMessage[riskLevel]}
+              </Typography>
+            </Box>
             {/* Adjustable Rent */}
             <Box sx={{ mb: 6 }}>
               <Typography variant="h5" fontWeight="bold">Adjustable Rental Income</Typography>
