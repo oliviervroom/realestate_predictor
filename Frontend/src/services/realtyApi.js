@@ -18,20 +18,20 @@ class RateLimiter {
 
   async processQueue() {
     if (this.processing || this.queue.length === 0) return;
-    
+
     this.processing = true;
     const { request, resolve } = this.queue.shift();
-    
+
     try {
       const result = await request();
       resolve(result);
     } catch (error) {
       resolve({ error });
     }
-    
-    // Wait for the rate limit period
+
+// Wait for the rate limit period
     await new Promise(resolve => setTimeout(resolve, 1000 / this.requestsPerSecond));
-    
+
     this.processing = false;
     this.processQueue();
   }
@@ -123,16 +123,16 @@ RealtyInUS API Endpoints Documentation:
 
 // Format address query for better auto-complete results
 const formatAddressQuery = (query) => {
-  // Check if query contains a number
+// Check if query contains a number
   const hasNumber = /\d/.test(query);
   if (!hasNumber) return query;
 
-  // Split into number and street parts
+// Split into number and street parts
   const parts = query.split(/\s+/);
   const numberPart = parts.find(part => /^\d+$/.test(part));
   const streetPart = parts.filter(part => !/^\d+$/.test(part)).join(' ');
 
-  // If we have both number and street, format as "street number"
+// If we have both number and street, format as "street number"
   if (numberPart && streetPart) {
     return `${streetPart} ${numberPart}`;
   }
@@ -148,7 +148,7 @@ export const searchProperties = async (params) => {
       data: params
     });
 
-    // Construct the request data
+// Construct the request data
     const requestData = {
       limit: 42,
       offset: 0,
@@ -221,7 +221,7 @@ export const getPropertyDetails = async (propertyId) => {
         params: { property_id: propertyId }
       })
     );
-    
+
     if (response.error) {
       throw response.error;
     }
@@ -288,8 +288,8 @@ export const getLocationSuggestions = async (query) => {
     }
 
     const suggestions = response.data?.autocomplete || [];
-    
-    // Add unique IDs to suggestions to prevent React key warnings
+
+// Add unique IDs to suggestions to prevent React key warnings
     const processedSuggestions = suggestions.map((suggestion, index) => ({
       ...suggestion,
       id: `${suggestion.postal_code || suggestion.line || suggestion.city || suggestion.state_code}-${index}`
@@ -297,14 +297,14 @@ export const getLocationSuggestions = async (query) => {
 
     return processedSuggestions
       .filter(suggestion => {
-        // Remove duplicate ZIP codes
+// Remove duplicate ZIP codes
         if (suggestion.postal_code) {
           return processedSuggestions.findIndex(s => s.postal_code === suggestion.postal_code) === processedSuggestions.indexOf(suggestion);
         }
         return true;
       })
       .sort((a, b) => {
-        // Prioritize addresses when query contains numbers
+// Prioritize addresses when query contains numbers
         if (/\d/.test(query)) {
           const aHasAddress = Boolean(a.line);
           const bHasAddress = Boolean(b.line);
@@ -317,4 +317,29 @@ export const getLocationSuggestions = async (query) => {
     console.error('Error fetching location suggestions:', error);
     return [];
   }
-}; 
+};
+
+export const getPredictedRent = async (transformedInput) => {
+  try {
+    const response = await fetch('http://127.0.0.1:5000/predict-rent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(transformedInput)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to fetch predicted rent');
+    }
+
+    return result.predicted_rent;
+  } catch (error) {
+    console.error('Error getting predicted rent:', error);
+    return null; // Return null if error occurs
+  }
+};
+
+
