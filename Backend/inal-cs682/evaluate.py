@@ -9,12 +9,12 @@ import pandas as pd
 
 def main():
     # Step 1: Load the model
-    model_path = "/cs682/experiments/model-1"  # best so far: model-1 
+    model_path = "./cs682/experiments/model-1"  # best so far: model-1 
     model = tf.keras.models.load_model(model_path)
 
     # Paths 
-    features_path = "/cs682/data/features.csv"
-    targets_path = "/cs682/data/targets.csv"
+    features_path = "./cs682/data/features.csv"
+    targets_path = "./cs682/data/targets.csv"
 
     # Load data
     X = pd.read_csv(features_path)
