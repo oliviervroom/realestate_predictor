@@ -25,11 +25,11 @@ def main():
         print("No GPU available, using CPU.")
 
     # Paths 
-    features_path = "/cs682/data/features.csv"
-    targets_path = "/cs682/data/targets.csv"
+    features_path = "./cs682/data/features.csv"
+    targets_path = "./cs682/data/targets.csv"
 
     # Load config
-    with open("/cs682/config/config.json", "r") as file:
+    with open("./cs682/config/config.json", "r") as file:
         config = json.load(file)
 
     # Load data
@@ -61,7 +61,7 @@ def main():
     )
 
     # Log the training output
-    log_file_path = "/cs682/experiments/training_logs-n.txt"
+    log_file_path = "./cs682/experiments/training_logs-n.txt"
     log_file = open(log_file_path, "w")
 
     # Write hyperparameters to the log file
@@ -99,7 +99,7 @@ def main():
     print(f"Test loss: {test_loss:.4f}, Test MAE: {test_mae:.4f}")
 
     # Save the model
-    model.save("/cs682/experiments/model-n", save_format="tf")
+    model.save("./cs682/experiments/model-n", save_format="tf")
 
 
 if __name__ == "__main__":
