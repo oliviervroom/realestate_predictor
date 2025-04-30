@@ -31,6 +31,7 @@ import BedBathToggle from '../../components/BedBathToggle/BedBathToggle';
 import PriceToggle from '../../components/PriceToggle/PriceToggle';
 import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFootageToggle';
 import { searchProperties } from '../../services/realtyApi';
+import { searchMLSProperties } from '../../services/mlsApi';
 import { WORKING_VERSION, EDIT_VERSION } from '../../version';
 import Header from '../../components/Header';
 
@@ -89,6 +90,7 @@ const Properties = () => {
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
   const [view, setView] = useState('list');
+  const [dataSource, setDataSource] = useState('realtyApi');
   
   // Filter states
   const [price, setPrice] = useState(null);
@@ -160,7 +162,9 @@ const Properties = () => {
       setLoading(true);
       try {
         const filters = buildFilters(stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft);
-        const result = await searchProperties(filters);
+        const searchFunction = dataSource === 'realtyApi' ? searchProperties : searchMLSProperties;
+        const result = await searchFunction(filters);
+        
         if (result.success) {
           setProperties(result.processedData || []);
           setDebugInfo(result);
@@ -177,7 +181,7 @@ const Properties = () => {
     };
 
     fetchPropertyData();
-  }, [stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft]);
+  }, [stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft, dataSource]);
 
   // Render property cards
   const renderProperties = () => (
@@ -215,7 +219,7 @@ const Properties = () => {
 
           {/* Header with search */}
           <Box sx={{ mb: 3 }}>
-            <SearchBar />
+            <SearchBar onDataSourceChange={setDataSource} dataSource={dataSource} />
           </Box>
 
           {/* Filters */}

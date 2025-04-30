@@ -1,21 +1,42 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Autocomplete, TextField, InputAdornment, Typography, Paper, Card, CardMedia, CardContent, Select, MenuItem, FormControl } from '@mui/material';
+import { Box, Autocomplete, TextField, InputAdornment, Typography, Paper, Card, CardMedia, CardContent, Select, MenuItem, FormControl, CircularProgress } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import HomeIcon from '@mui/icons-material/Home';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
 import { getLocationSuggestions, searchProperties } from '../../services/realtyApi';
+import { getMLSLocationSuggestions, searchMLSProperties } from '../../services/mlsApi';
 import debounce from 'lodash/debounce';
 
-const SearchBar = () => {
+const SearchBar = ({ onDataSourceChange, dataSource: externalDataSource }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
-  const [dataSource, setDataSource] = useState('realtyApi');
+  const [dataSource, setDataSource] = useState(externalDataSource || 'realtyApi');
 
-  // Fetch suggestions using the auto-complete endpoint
+  // Update data source when external prop changes
+  React.useEffect(() => {
+    if (externalDataSource && externalDataSource !== dataSource) {
+      setDataSource(externalDataSource);
+    }
+  }, [externalDataSource]);
+
+  // Handle data source change
+  const handleDataSourceChange = (event) => {
+    const newDataSource = event.target.value;
+    setDataSource(newDataSource);
+    if (onDataSourceChange) {
+      onDataSourceChange(newDataSource);
+    }
+    // Clear current suggestions and preview when switching data sources
+    setOptions([]);
+    setPreview(null);
+    setInputValue('');
+  };
+
+  // Fetch suggestions using the selected data source
   const fetchSuggestions = useCallback(
     debounce(async (query) => {
       if (!query || query.length < 2) {
@@ -26,14 +47,18 @@ const SearchBar = () => {
 
       setLoading(true);
       try {
-        const suggestions = await getLocationSuggestions(query);
+        const suggestions = dataSource === 'realtyApi' 
+          ? await getLocationSuggestions(query)
+          : await getMLSLocationSuggestions(query);
+        
         setOptions(suggestions || []);
 
         // If we have a full address, try to get a preview
         if (suggestions && suggestions.length > 0) {
           const firstSuggestion = suggestions[0];
           if (firstSuggestion.line && firstSuggestion.city && firstSuggestion.state_code) {
-            const previewResult = await searchProperties({
+            const searchFunction = dataSource === 'realtyApi' ? searchProperties : searchMLSProperties;
+            const previewResult = await searchFunction({
               address: firstSuggestion.line,
               city: firstSuggestion.city,
               state_code: firstSuggestion.state_code,
@@ -58,7 +83,7 @@ const SearchBar = () => {
         setLoading(false);
       }
     }, 300),
-    []
+    [dataSource]
   );
 
   // Handle location selection and navigation
@@ -178,6 +203,12 @@ const SearchBar = () => {
                     <LocationOnIcon color="action" />
                   </InputAdornment>
                 ),
+                endAdornment: (
+                  <>
+                    {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -245,7 +276,7 @@ const SearchBar = () => {
       <FormControl sx={{ minWidth: 120, flexShrink: 0 }}>
         <Select
           value={dataSource}
-          onChange={(e) => setDataSource(e.target.value)}
+          onChange={handleDataSourceChange}
           size="small"
           sx={{
             borderRadius: 2,
@@ -256,6 +287,19 @@ const SearchBar = () => {
             '&:hover': {
               '& .MuiOutlinedInput-notchedOutline': {
                 borderColor: 'primary.main',
+              },
+            },
+          }}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                backgroundColor: 'white',
+                '& .MuiMenuItem-root': {
+                  backgroundColor: 'white',
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                  },
+                },
               },
             },
           }}

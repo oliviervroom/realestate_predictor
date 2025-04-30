@@ -7,6 +7,7 @@ import Properties from './screens/Properties/Properties';
 import PropertyInfo from './screens/PropertyInfo/PropertyInfo';
 import PropertyListings from './screens/propertyListings/PropertyListings';
 import Changelog from './components/Changelog/Changelog';
+import MLSSearch from './screens/MLSSearch';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/property/:id" element={<PropertyInfo />} />
           <Route path="/property-listings" element={<PropertyListings />} />
           <Route path="/changelog" element={<Changelog />} />
+          <Route path="/mls" element={<MLSSearch />} />
         </Routes>
       </Box>
     </Router>
