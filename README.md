@@ -24,4 +24,6 @@ App.js: controls routing (e.g. /MA/Boston/Ashmont-250) and imports components
 
 Frontend/PropertyInfo.js: Shows detailed info about a specific property 
 
-To run sale prediction front-end, do python app.py
+To run sale prediction front-end, do python app.py, or python evaluate.py
+   In evaluate.py, either manually input a vector or specify the index
+   

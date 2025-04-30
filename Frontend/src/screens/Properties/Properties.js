@@ -202,8 +202,6 @@ const Properties = () => {
     <Box sx={{ bgcolor: '#fafafa', minHeight: '100vh' }}>
       <Header />
       <Container maxWidth="lg" sx={{ position: 'relative', minHeight: '100vh', pb: 4 }}>
-        <ViewToggle view={view} onViewChange={setView} />
-        
         <Box sx={{ 
           py: 3,
           display: 'flex',
@@ -244,6 +242,11 @@ const Properties = () => {
               value={sqft}
               onChange={setSqft}
             />
+          </Box>
+
+          {/* View Toggle */}
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            <ViewToggle view={view} onViewChange={setView} />
           </Box>
 
           {/* Breadcrumbs */}

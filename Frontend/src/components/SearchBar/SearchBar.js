@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Autocomplete, TextField, InputAdornment, Typography, Paper, Card, CardMedia, CardContent } from '@mui/material';
+import { Box, Autocomplete, TextField, InputAdornment, Typography, Paper, Card, CardMedia, CardContent, Select, MenuItem, FormControl } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import HomeIcon from '@mui/icons-material/Home';
 import LocationCityIcon from '@mui/icons-material/LocationCity';
@@ -13,6 +13,7 @@ const SearchBar = () => {
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [dataSource, setDataSource] = useState('realtyApi');
 
   // Fetch suggestions using the auto-complete endpoint
   const fetchSuggestions = useCallback(
@@ -146,99 +147,123 @@ const SearchBar = () => {
   };
 
   return (
-    <Box>
-      <Autocomplete
-        freeSolo
-        options={options}
-        getOptionLabel={getOptionLabel}
-        renderOption={renderOption}
-        inputValue={inputValue}
-        onInputChange={(event, newValue) => {
-          setInputValue(newValue);
-          fetchSuggestions(newValue);
-        }}
-        onChange={handleLocationSelect}
-        loading={loading}
-        filterOptions={(x) => x}
-        isOptionEqualToValue={(option, value) => {
-          if (typeof value === 'string') return false;
-          return option.id === value.id;
-        }}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            fullWidth
-            placeholder="Search by address, neighborhood, city, ZIP code, or state"
-            InputProps={{
-              ...params.InputProps,
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LocationOnIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                backgroundColor: 'background.paper',
-                '&:hover': {
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'primary.main',
+    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', width: '100%' }}>
+      <Box sx={{ flex: 1 }}>
+        <Autocomplete
+          freeSolo
+          options={options}
+          getOptionLabel={getOptionLabel}
+          renderOption={renderOption}
+          inputValue={inputValue}
+          onInputChange={(event, newValue) => {
+            setInputValue(newValue);
+            fetchSuggestions(newValue);
+          }}
+          onChange={handleLocationSelect}
+          loading={loading}
+          filterOptions={(x) => x}
+          isOptionEqualToValue={(option, value) => {
+            if (typeof value === 'string') return false;
+            return option.id === value.id;
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              fullWidth
+              placeholder="Search by address, neighborhood, city, ZIP code, or state"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOnIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  backgroundColor: 'background.paper',
+                  '&:hover': {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
                   },
                 },
+              }}
+            />
+          )}
+          PaperComponent={({ children, ...props }) => (
+            <Paper {...props}>
+              {children}
+              {preview && (
+                <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Property Preview</Typography>
+                  <Card sx={{ display: 'flex', mb: 1 }}>
+                    {preview.primary_photo?.href ? (
+                      <CardMedia
+                        component="img"
+                        sx={{ width: 100, height: 100, objectFit: 'cover' }}
+                        image={preview.primary_photo.href}
+                        alt={preview.location?.address?.line || 'Property preview'}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://placehold.co/100x100?text=No+Image';
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 100,
+                          height: 100,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: 'grey.100'
+                        }}
+                      >
+                        <HomeIcon sx={{ color: 'grey.400', fontSize: 40 }} />
+                      </Box>
+                    )}
+                    <CardContent sx={{ flex: 1, p: 1 }}>
+                      <Typography variant="body2" noWrap>
+                        {preview.location?.address?.line}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        {preview.location?.address?.city}, {preview.location?.address?.state_code}
+                      </Typography>
+                      <Typography variant="body2" color="primary">
+                        ${preview.list_price?.toLocaleString()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+              )}
+            </Paper>
+          )}
+        />
+      </Box>
+      <FormControl sx={{ minWidth: 120, flexShrink: 0 }}>
+        <Select
+          value={dataSource}
+          onChange={(e) => setDataSource(e.target.value)}
+          size="small"
+          sx={{
+            borderRadius: 2,
+            backgroundColor: 'background.paper',
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'divider',
+            },
+            '&:hover': {
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'primary.main',
               },
-            }}
-          />
-        )}
-        PaperComponent={({ children, ...props }) => (
-          <Paper {...props}>
-            {children}
-            {preview && (
-              <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Property Preview</Typography>
-                <Card sx={{ display: 'flex', mb: 1 }}>
-                  {preview.primary_photo?.href ? (
-                    <CardMedia
-                      component="img"
-                      sx={{ width: 100, height: 100, objectFit: 'cover' }}
-                      image={preview.primary_photo.href}
-                      alt={preview.location?.address?.line || 'Property preview'}
-                      onError={(e) => {
-                        e.target.onerror = null; // Prevent infinite loop
-                        e.target.src = 'https://placehold.co/100x100?text=No+Image';
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        width: 100,
-                        height: 100,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: 'grey.100'
-                      }}
-                    >
-                      <HomeIcon sx={{ color: 'grey.400', fontSize: 40 }} />
-                    </Box>
-                  )}
-                  <CardContent sx={{ flex: 1, p: 1 }}>
-                    <Typography variant="body2" noWrap>
-                      {preview.location?.address?.line}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {preview.location?.address?.city}, {preview.location?.address?.state_code}
-                    </Typography>
-                    <Typography variant="body2" color="primary">
-                      ${preview.list_price?.toLocaleString()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-            )}
-          </Paper>
-        )}
-      />
+            },
+          }}
+        >
+          <MenuItem value="realtyApi">Realty API</MenuItem>
+          <MenuItem value="mls">MLS Data</MenuItem>
+        </Select>
+      </FormControl>
     </Box>
   );
 };

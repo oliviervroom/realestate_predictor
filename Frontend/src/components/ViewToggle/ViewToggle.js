@@ -6,10 +6,6 @@ import SplitscreenIcon from '@mui/icons-material/Splitscreen';
 import MapIcon from '@mui/icons-material/Map';
 
 const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  position: 'absolute',
-  top: '1rem',
-  right: '1rem',
-  zIndex: 1000,
   backgroundColor: theme.palette.background.paper,
   '& .MuiToggleButton-root': {
     border: `1px solid ${theme.palette.divider}`,
