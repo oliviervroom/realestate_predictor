@@ -13,7 +13,7 @@ data = pd.concat([
     pd.read_csv('house-prices6.csv')
 ])
 
-# 2. Select and Filter Columns + Remove ZIP_CODE
+# 2. Select and Filter Columns 
 columns_to_keep = [
     "LIST_PRICE", "NO_BEDROOMS", "NO_FULL_BATHS", "NO_HALF_BATHS", 
     "TOTAL_BATHS", "SQUARE_FEET", "AboveGradeFinishedArea", 
