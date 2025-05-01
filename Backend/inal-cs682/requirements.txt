@@ -4,7 +4,7 @@
 # Option 2:
 # or simply install python version 3.10.12
 
-# Then run:
+# (1st cd to the directory with requirements.txt) Then run:
 # pip install -r requirements.txt
 
 tensorflow==2.13.0rc0
