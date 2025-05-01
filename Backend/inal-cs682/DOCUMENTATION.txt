@@ -1,0 +1,79 @@
+DOCS:
+
+- `inal-cs682` is the root directory of the project and the root directory to which all relative paths refer.
+
+- config/config.json is the file containing the configuration parameters for the model (hyperparameters) and the training process.
+
+- data/ directory contains the X (features.csv) and the target Y (targets.csv) files, which come from Olivier's data cleaned using 
+miscellaneous/data-cleaning.py 
+
+- evaluate.py picks a feature vector of a property (see the script), and makes a prediction based on it, (while also comparing the prediction to the actual observed value corresponding to the feature vector if it comes from the dataset). BE MINDFUL OF HOW YOU USE THIS SCRIPT: it computes the mean absolute error (MAE) between the prediction and the observed value, but if your observed value specified in the script doesn't match the corresponding feature vector, the MAE computation will make no sense, as the prices are for different properties. 
+
+  - NOTE: evaluate.py is meant for demonstration purposes, its functionality is integrated into app.py.
+
+- experiments/ directory contains some of the saved training results, although the model saved as model-1 performs best, so the remaining ones can be (and have been) disposed of. The training logs can be found in the corresponding log files.
+
+- app.py is the Flask-based app for web-based deployment of the model.
+
+- templates/index.html is the webpage used to interface with the model via app.py
+
+- src/models/model.py contains the model itself, it is an MLP written in Tensorflow, please see source code for details and extensive documentation
+
+- src/utils/data_loader.py loads the data into the model
+
+- train.py is the training script
+
+- requirements.txt has all of the required tools and package versions
+
+Project tree: 
+
+inal-cs682/
+├── config
+│   └── config.json
+├── data
+│   ├── features.csv
+│   └── targets.csv
+├── evaluate.py
+├── experiments
+|   |
+│   ├── model-1
+│   │   ├── assets
+│   │   ├── keras_metadata.pb
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+│   ├── model-2
+│   │   ├── assets
+│   │   ├── keras_metadata.pb
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+│   ├── model-3
+│   │   ├── assets
+│   │   ├── keras_metadata.pb
+│   │   ├── saved_model.pb
+│   │   └── variables
+│   │       ├── variables.data-00000-of-00001
+│   │       └── variables.index
+|   |
+│   ├── training_logs-2.txt
+│   └── training_logs.txt
+|-- app.py
+|-- templates
+|   |
+|   |-- index.html
+|
+|-- miscellaneous
+|   |
+|   |-- data-cleaning.py  
+|
+├── README.md
+├── requirements.txt
+├── src
+│   ├── models
+│   │   └── model.py
+│   └── utils
+│       └── data_loader.py
+└── train.py
