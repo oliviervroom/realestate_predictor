@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container } from '@mui/material';
+import { Box, Container, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import SearchBar from '../../components/SearchBar/SearchBar';
@@ -56,6 +56,31 @@ function Home() {
       >
         <Container maxWidth="lg">
           <Box sx={{ mt: 8 }}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
+              <Typography 
+                variant="h2" 
+                component="h1" 
+                sx={{ 
+                  color: 'white', 
+                  fontWeight: 'bold',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+                }}
+              >
+                Discover Investment Opportunities
+              </Typography>
+              <Typography 
+                variant="h4" 
+                component="h2" 
+                sx={{ 
+                  color: 'white', 
+                  fontWeight: 'medium',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                  mt: 1
+                }}
+              >
+                Powered by AI
+              </Typography>
+            </Box>
             <Box 
               sx={{ 
                 bgcolor: 'rgba(34, 34, 34, 0.9)', 

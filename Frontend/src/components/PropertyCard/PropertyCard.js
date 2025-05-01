@@ -9,14 +9,52 @@ import {
   Chip,
   Skeleton
 } from '@mui/material';
-import { LocationOn, Bed, Bathtub, SquareFoot } from '@mui/icons-material';
+import { LocationOn, Bed, Bathtub, SquareFoot, TrendingUp, MonetizationOn } from '@mui/icons-material';
 
 const DEFAULT_IMAGE = '/default-property.png';
+
+// Simple hash function to generate a stable number from a string
+const hashString = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+};
+
+// Generate predictions based on property data
+const generatePredictions = (property) => {
+  if (!property?.location?.address?.line || !property?.list_price) return null;
+  
+  const address = property.location.address.line;
+  const listPrice = property.list_price;
+  
+  // Generate a number between 0 and 1 using the address hash
+  const hash = hashString(address);
+  const normalizedHash = (hash % 1000) / 1000; // Convert to 0-1 range
+  
+  // Sale price: -10% to +10% of list price
+  const salePercentage = (normalizedHash * 0.2) - 0.1; // -10% to +10%
+  const predictedSalePrice = Math.round(listPrice * (1 + salePercentage));
+  
+  // Rental price: 1-3% of list price
+  const rentalPercentage = 0.01 + (normalizedHash * 0.02); // 1-3%
+  const predictedRent = Math.round(listPrice * rentalPercentage);
+  
+  return {
+    predictedSalePrice,
+    predictedRent
+  };
+};
 
 const PropertyCard = ({ property }) => {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  
+  const predictions = generatePredictions(property);
 
   const handleClick = () => {
     // Get address components
@@ -142,6 +180,23 @@ const PropertyCard = ({ property }) => {
             variant="outlined"
           />
         </Box>
+
+        {predictions && (
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TrendingUp sx={{ color: predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main' }} />
+              <Typography variant="body2" color={predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                Predicted Sale: ${predictions.predictedSalePrice.toLocaleString()}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <MonetizationOn sx={{ color: 'primary.main' }} />
+              <Typography variant="body2" color="primary.main">
+                Predicted Rent: ${predictions.predictedRent.toLocaleString()}/mo
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

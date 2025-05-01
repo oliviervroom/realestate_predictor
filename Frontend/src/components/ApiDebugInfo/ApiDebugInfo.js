@@ -17,7 +17,7 @@ const ApiDebugInfo = ({ debugInfo }) => {
   };
 
   return (
-    <Accordion sx={{ mt: 4 }}>
+    <Accordion sx={{ mt: 4 }} className="api-debug-info">
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography>API Debug Information</Typography>
       </AccordionSummary>

@@ -24,6 +24,7 @@ import { getPredictedRent } from '../../services/realtyApi';
 import CloseIcon from '@mui/icons-material/Close';
 import CodeIcon from '@mui/icons-material/Code';
 import { searchMLSProperties, loadMLSData } from '../../services/mlsApi';
+import DevModeWrapper from '../../components/DevToggle/DevModeWrapper';
 
 // Simple hash function to generate a stable number from a string
 const hashString = (str) => {
@@ -36,18 +37,29 @@ const hashString = (str) => {
   return Math.abs(hash);
 };
 
-// Generate a stable prediction between -10% and +10% based on the address
-const generateStablePrediction = (address, listPrice) => {
-  if (!address || !listPrice) return null;
+// Generate predictions based on property data
+const generatePredictions = (property) => {
+  if (!property?.location?.address?.line || !property?.list_price) return null;
+  
+  const address = property.location.address.line;
+  const listPrice = property.list_price;
   
   // Generate a number between 0 and 1 using the address hash
   const hash = hashString(address);
   const normalizedHash = (hash % 1000) / 1000; // Convert to 0-1 range
   
-  // Map the hash to a range of -10% to +10%
-  const percentageChange = (normalizedHash * 0.2) - 0.1;
+  // Sale price: -10% to +10% of list price
+  const salePercentage = (normalizedHash * 0.2) - 0.1; // -10% to +10%
+  const predictedSalePrice = Math.round(listPrice * (1 + salePercentage));
   
-  return Math.round(listPrice * (1 + percentageChange));
+  // Rental price: 1-3% of list price
+  const rentalPercentage = 0.01 + (normalizedHash * 0.02); // 1-3%
+  const predictedRent = Math.round(listPrice * rentalPercentage);
+  
+  return {
+    predictedSalePrice,
+    predictedRent
+  };
 };
 
 const PropertyInfo = () => {
@@ -231,22 +243,23 @@ const PropertyInfo = () => {
   }, [property]);
 
   useEffect(() => {
-    // Calculate predicted price using the stable prediction function
+    // Calculate predicted price using the predictions function
     if (property?.list_price && property?.location?.address?.line) {
-      const prediction = generateStablePrediction(
-        property.location.address.line,
-        property.list_price
-      );
-      setPredictedPrice(prediction);
+      const predictions = generatePredictions(property);
+      setPredictedPrice(predictions?.predictedSalePrice || null);
     }
   }, [property]);
+
+  const predictions = generatePredictions(property);
 
   if (dataErrors.length > 0) {
     return (
       <Container>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Chip label={VERSIONS.working} color="primary" sx={{ mr: 1 }} />
-          <Chip label={VERSIONS.edit} color="secondary" />
+          <DevModeWrapper>
+            <Chip label={VERSIONS.working} color="primary" sx={{ mr: 1 }} />
+            <Chip label={VERSIONS.edit} color="secondary" />
+          </DevModeWrapper>
         </Box>
         <Alert severity="error" sx={{ mt: 4 }}>
           {dataErrors.map((error, index) => (
@@ -307,12 +320,6 @@ const PropertyInfo = () => {
     <Box sx={{ bgcolor: '#faf9f8', minHeight: '100vh' }}>
       <Header />
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Version Info */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Chip label={VERSIONS.working} color="primary" sx={{ mr: 1 }} />
-          <Chip label={VERSIONS.edit} color="secondary" />
-        </Box>
-
         {/* Error Messages */}
         {error && <ErrorMessage message={error} />}
         {dataErrors.length > 0 && (
@@ -374,62 +381,64 @@ const PropertyInfo = () => {
             </Card>
 
             {/* API Debug Information */}
-            <Accordion sx={{ mb: 3 }}>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography>API Debug Information</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                {/* API Request Info */}
-                <Paper sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h6">API Request:</Typography>
-                    <Tooltip title={copySuccess || "Copy to clipboard"}>
-                      <IconButton onClick={() => handleCopyToClipboard({
+            <DevModeWrapper>
+              <Accordion sx={{ mb: 3 }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography>API Debug Information</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  {/* API Request Info */}
+                  <Paper sx={{ p: 2, mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6">API Request:</Typography>
+                      <Tooltip title={copySuccess || "Copy to clipboard"}>
+                        <IconButton onClick={() => handleCopyToClipboard({
+                          endpoint: '/properties/v3/detail',
+                          method: 'GET',
+                          params: { property_id: property.property_id }
+                        }, 'API request')}>
+                          <ContentCopyIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Box component="pre" sx={{ 
+                      bgcolor: '#f5f5f5', 
+                      p: 2, 
+                      borderRadius: 1,
+                      overflow: 'auto',
+                      maxHeight: '200px'
+                    }}>
+                      {JSON.stringify({
                         endpoint: '/properties/v3/detail',
                         method: 'GET',
                         params: { property_id: property.property_id }
-                      }, 'API request')}>
-                        <ContentCopyIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                  <Box component="pre" sx={{ 
-                    bgcolor: '#f5f5f5', 
-                    p: 2, 
-                    borderRadius: 1,
-                    overflow: 'auto',
-                    maxHeight: '200px'
-                  }}>
-                    {JSON.stringify({
-                      endpoint: '/properties/v3/detail',
-                      method: 'GET',
-                      params: { property_id: property.property_id }
-                    }, null, 2)}
-                  </Box>
-                </Paper>
+                      }, null, 2)}
+                    </Box>
+                  </Paper>
 
-                {/* API Response */}
-                <Paper sx={{ p: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="h6">API Response:</Typography>
-                    <Tooltip title={copySuccess || "Copy to clipboard"}>
-                      <IconButton onClick={() => handleCopyToClipboard(property, 'API response')}>
-                        <ContentCopyIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                  <Box component="pre" sx={{ 
-                    bgcolor: '#f5f5f5', 
-                    p: 2, 
-                    borderRadius: 1,
-                    overflow: 'auto',
-                    maxHeight: '400px'
-                  }}>
-                    {JSON.stringify(property, null, 2)}
-                  </Box>
-                </Paper>
-              </AccordionDetails>
-            </Accordion>
+                  {/* API Response */}
+                  <Paper sx={{ p: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6">API Response:</Typography>
+                      <Tooltip title={copySuccess || "Copy to clipboard"}>
+                        <IconButton onClick={() => handleCopyToClipboard(property, 'API response')}>
+                          <ContentCopyIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                    <Box component="pre" sx={{ 
+                      bgcolor: '#f5f5f5', 
+                      p: 2, 
+                      borderRadius: 1,
+                      overflow: 'auto',
+                      maxHeight: '400px'
+                    }}>
+                      {JSON.stringify(property, null, 2)}
+                    </Box>
+                  </Paper>
+                </AccordionDetails>
+              </Accordion>
+            </DevModeWrapper>
 
             {/* About This Home */}
             <Box sx={{ mb: 6 }}>
@@ -482,12 +491,12 @@ const PropertyInfo = () => {
                     <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                       Predicted Sale Price
                     </Typography>
-                    <Typography variant="h4" fontWeight="bold" color={predictedPrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
-                      ${predictedPrice?.toLocaleString() || 'Calculating...'}
+                    <Typography variant="h4" fontWeight="bold" color={predictions?.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                      ${predictions?.predictedSalePrice?.toLocaleString() || 'Calculating...'}
                     </Typography>
-                    {predictedPrice && (
-                      <Typography variant="body2" color={predictedPrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
-                        {predictedPrice > (property?.list_price || 0) ? '↑' : '↓'} {Math.abs(Math.round((predictedPrice / (property?.list_price || 1) - 1) * 100))}% from list price
+                    {predictions?.predictedSalePrice && (
+                      <Typography variant="body2" color={predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                        {predictions.predictedSalePrice > (property?.list_price || 0) ? '↑' : '↓'} {Math.abs(Math.round((predictions.predictedSalePrice / (property?.list_price || 1) - 1) * 100))}% from list price
                       </Typography>
                     )}
                   </Box>
@@ -555,7 +564,7 @@ const PropertyInfo = () => {
               </Paper>
             </Box>
 
-            {/* Rental Income Analysis Section */}
+            {/* Rental Income Analysis */}
             <Box sx={{ mb: 6 }}>
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Rental Income Analysis
@@ -568,7 +577,7 @@ const PropertyInfo = () => {
                     Predicted Monthly Rent
                   </Typography>
                   <Typography variant="h4" fontWeight="bold" color="primary">
-                    $2,500/mo
+                    ${predictions?.predictedRent?.toLocaleString() || 'Calculating...'}/mo
                   </Typography>
                 </Paper>
 
@@ -577,7 +586,10 @@ const PropertyInfo = () => {
                     Suggested Optimal Rent
                   </Typography>
                   <Typography variant="h4" fontWeight="bold" color="success.main">
-                    $2,400/mo
+                    ${Math.round(predictions?.predictedRent * 0.95).toLocaleString() || 'Calculating...'}/mo
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Recommended for faster rental and higher occupancy
                   </Typography>
                 </Paper>
               </Box>
@@ -585,21 +597,86 @@ const PropertyInfo = () => {
               {/* Success Likelihood Curve */}
               <Box sx={{ height: 300, mt: 4 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={generateSuccessCurve(2500)}>
+                  <LineChart data={(() => {
+                    if (!predictions?.predictedRent) return [];
+                    
+                    const baseRent = predictions.predictedRent;
+                    const optimalRent = Math.round(baseRent * 0.95);
+                    const minRent = Math.round(baseRent * 0.7);  // 70% of predicted
+                    const maxRent = Math.round(baseRent * 1.3);  // 130% of predicted
+                    const step = Math.round((maxRent - minRent) / 30); // 30 points on the curve
+                    
+                    const data = [];
+                    for (let rent = minRent; rent <= maxRent; rent += step) {
+                      // Calculate likelihood - peaks at optimal rent
+                      const distanceFromOptimal = Math.abs(rent - optimalRent) / baseRent;
+                      const likelihood = Math.exp(-8 * Math.pow(distanceFromOptimal, 2));
+                      data.push({ 
+                        rent,
+                        likelihood,
+                        isOptimal: rent === optimalRent
+                      });
+                    }
+                    
+                    // Ensure optimal point is included
+                    if (!data.find(d => d.rent === optimalRent)) {
+                      data.push({
+                        rent: optimalRent,
+                        likelihood: 1,
+                        isOptimal: true
+                      });
+                      // Sort to maintain curve smoothness
+                      data.sort((a, b) => a.rent - b.rent);
+                    }
+                    
+                    return data;
+                  })()}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                    <XAxis dataKey="rent" label={{ value: 'Rent Price ($)', position: 'insideBottom', dy: 10 }} />
-                    <YAxis tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-                    <ChartTooltip formatter={(value) => `${(value * 100).toFixed(0)}% Likelihood`} />
+                    <XAxis 
+                      dataKey="rent" 
+                      tickFormatter={(value) => `$${value.toLocaleString()}`}
+                      label={{ value: 'Monthly Rent ($)', position: 'insideBottom', dy: 10 }} 
+                    />
+                    <YAxis 
+                      tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                      domain={[0, 1]}
+                    />
+                    <ChartTooltip 
+                      formatter={(value, name, props) => [
+                        `${(value * 100).toFixed(0)}%`,
+                        'Success Likelihood'
+                      ]}
+                      labelFormatter={(label) => `$${label.toLocaleString()}/mo`}
+                    />
                     <Line
                       type="monotone"
                       dataKey="likelihood"
                       stroke="#228B22"
                       strokeWidth={3}
-                      dot={false}
+                      dot={(props) => {
+                        if (props.payload.isOptimal) {
+                          return (
+                            <circle
+                              cx={props.cx}
+                              cy={props.cy}
+                              r={6}
+                              fill="#228B22"
+                              stroke="#fff"
+                              strokeWidth={2}
+                            />
+                          );
+                        }
+                        return null;
+                      }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </Box>
+
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+                The curve shows rental success likelihood at different price points. 
+                The green dot indicates the suggested optimal rent for maximum occupancy.
+              </Typography>
             </Box>
 
             {/* Rent Optimization Explanation */}

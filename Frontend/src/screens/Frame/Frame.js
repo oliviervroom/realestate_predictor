@@ -19,6 +19,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DataObjectIcon from '@mui/icons-material/DataObject';
 import MemoryIcon from '@mui/icons-material/Memory';
 import StorageIcon from '@mui/icons-material/Storage';
+import DevModeWrapper from '../../components/DevToggle/DevModeWrapper';
 
 function Frame() {
   const [originalData, setOriginalData] = useState([]);
@@ -249,13 +250,6 @@ function Frame() {
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Chip label={`Version ${VERSIONS.working}`} color="primary" />
-            {VERSIONS.edit && (
-              <Chip 
-                label={VERSIONS.edit} 
-                color="warning" 
-              />
-            )}
             <Link to="/changelog" style={{ textDecoration: 'none' }}>
               <Chip 
                 label="View Changelog" 
@@ -265,89 +259,93 @@ function Frame() {
               />
             </Link>
           </Box>
-          {debugInfo && (
-            <Chip 
-              label={debugInfo.success ? "API Request Successful" : "API Request Failed"} 
-              color={debugInfo.success ? "success" : "error"} 
-            />
-          )}
+          <DevModeWrapper>
+            {debugInfo && (
+              <Chip 
+                label={debugInfo.success ? "API Request Successful" : "API Request Failed"} 
+                color={debugInfo.success ? "success" : "error"} 
+              />
+            )}
+          </DevModeWrapper>
         </Box>
 
         {/* Debug Information Accordion */}
-        {debugInfo && (
-          <Accordion sx={{ mb: 3 }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>API Debug Information</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Paper sx={{ p: 2, mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="h6">Filter Debug Steps:</Typography>
-                  <Tooltip title={copySuccess || "Copy to clipboard"}>
-                    <IconButton onClick={() => handleCopyToClipboard(debugInfo.debugSteps || [], 'Debug steps')}>
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-                <Box component="pre" sx={{ 
-                  bgcolor: '#f5f5f5', 
-                  p: 2, 
-                  borderRadius: 1,
-                  overflow: 'auto',
-                  maxHeight: '200px'
-                }}>
-                  {JSON.stringify(debugInfo.debugSteps || [], null, 2)}
-                </Box>
-              </Paper>
+        <DevModeWrapper>
+          {debugInfo && (
+            <Accordion sx={{ mb: 3 }}>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography>API Debug Information</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Paper sx={{ p: 2, mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="h6">Filter Debug Steps:</Typography>
+                    <Tooltip title={copySuccess || "Copy to clipboard"}>
+                      <IconButton onClick={() => handleCopyToClipboard(debugInfo.debugSteps || [], 'Debug steps')}>
+                        <ContentCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Box component="pre" sx={{ 
+                    bgcolor: '#f5f5f5', 
+                    p: 2, 
+                    borderRadius: 1,
+                    overflow: 'auto',
+                    maxHeight: '200px'
+                  }}>
+                    {JSON.stringify(debugInfo.debugSteps || [], null, 2)}
+                  </Box>
+                </Paper>
 
-              <Paper sx={{ p: 2, mb: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="h6">Request Data:</Typography>
-                  <Tooltip title={copySuccess || "Copy to clipboard"}>
-                    <IconButton onClick={() => handleCopyToClipboard(debugInfo.requestData, 'Request data')}>
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-                <Box component="pre" sx={{ 
-                  bgcolor: '#f5f5f5', 
-                  p: 2, 
-                  borderRadius: 1,
-                  overflow: 'auto',
-                  maxHeight: '200px'
-                }}>
-                  {JSON.stringify(debugInfo.requestData, null, 2)}
-                </Box>
-              </Paper>
-              
-              <Paper sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="h6">Response Data:</Typography>
-                  <Tooltip title={copySuccess || "Copy to clipboard"}>
-                    <IconButton onClick={() => handleCopyToClipboard(debugInfo.success ? debugInfo.responseData : debugInfo.error, 'Response data')}>
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-                <Box component="pre" sx={{ 
-                  bgcolor: '#f5f5f5', 
-                  p: 2, 
-                  borderRadius: 1,
-                  overflow: 'auto',
-                  maxHeight: '400px'
-                }}>
-                  {JSON.stringify(debugInfo.success ? debugInfo.responseData : debugInfo.error, null, 2)}
-                </Box>
-              </Paper>
+                <Paper sx={{ p: 2, mb: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="h6">Request Data:</Typography>
+                    <Tooltip title={copySuccess || "Copy to clipboard"}>
+                      <IconButton onClick={() => handleCopyToClipboard(debugInfo.requestData, 'Request data')}>
+                        <ContentCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Box component="pre" sx={{ 
+                    bgcolor: '#f5f5f5', 
+                    p: 2, 
+                    borderRadius: 1,
+                    overflow: 'auto',
+                    maxHeight: '200px'
+                  }}>
+                    {JSON.stringify(debugInfo.requestData, null, 2)}
+                  </Box>
+                </Paper>
+                
+                <Paper sx={{ p: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="h6">Response Data:</Typography>
+                    <Tooltip title={copySuccess || "Copy to clipboard"}>
+                      <IconButton onClick={() => handleCopyToClipboard(debugInfo.success ? debugInfo.responseData : debugInfo.error, 'Response data')}>
+                        <ContentCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                  <Box component="pre" sx={{ 
+                    bgcolor: '#f5f5f5', 
+                    p: 2, 
+                    borderRadius: 1,
+                    overflow: 'auto',
+                    maxHeight: '400px'
+                  }}>
+                    {JSON.stringify(debugInfo.success ? debugInfo.responseData : debugInfo.error, null, 2)}
+                  </Box>
+                </Paper>
 
-              {debugInfo.errorSource && (
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  Error Source: {debugInfo.errorSource}
-                </Alert>
-              )}
-            </AccordionDetails>
-          </Accordion>
-        )}
+                {debugInfo.errorSource && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    Error Source: {debugInfo.errorSource}
+                  </Alert>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          )}
+        </DevModeWrapper>
 
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -409,7 +407,7 @@ function Frame() {
         )}
 
         {/* API Debug Info at bottom */}
-        <Box sx={{ mt: 6 }}>
+        <Box sx={{ mt: 6 }} className="api-debug-info">
           {apiDebugInfo && (
             <Paper sx={{ p: 2, bgcolor: 'background.paper' }}>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>

@@ -1,0 +1,21 @@
+/* Hide dev elements when dev mode is off */
+.dev-test-element {
+  display: none !important;
+}
+
+#dev-mode-container.dev-mode ~ * .dev-test-element {
+  display: block !important;
+}
+
+/* Hide version chips and API debug info when dev mode is off */
+.version-chip,
+.api-debug-info {
+  display: none !important;
+}
+
+#dev-mode-container.dev-mode ~ * .version-chip,
+#dev-mode-container.dev-mode ~ * .api-debug-info {
+  display: block !important;
+}
+
+/* ... existing code ... */ 

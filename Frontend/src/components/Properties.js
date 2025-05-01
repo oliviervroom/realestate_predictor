@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Grid, Typography, Box, CircularProgress } from '@mui/material';
 import PropertyCard from './PropertyCard/PropertyCard';
-import mlsApi from '../services/mlsApi';
 import realtyApi from '../services/realtyApi';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [dataSource, setDataSource] = useState('realty');
   const [searchParams, setSearchParams] = useState(null);
 
   const handleSearch = async (params) => {
@@ -17,17 +15,8 @@ const Properties = () => {
     setSearchParams(params);
 
     try {
-      let results;
-      if (params.dataSource === 'mls') {
-        results = await mlsApi.searchMLSProperties(params.query, {
-          directSearch: params.directSearch
-        });
-      } else {
-        results = await realtyApi.searchProperties(params.query);
-      }
-
+      const results = await realtyApi.searchProperties(params.query);
       setProperties(results);
-      setDataSource(params.dataSource);
     } catch (error) {
       console.error('Search error:', error);
       setError('Failed to fetch properties. Please try again.');
@@ -63,9 +52,9 @@ const Properties = () => {
   }
 
   return (
-    <Grid container spacing={3} sx={{ mt: 2 }}>
+    <Grid container spacing={3}>
       {properties.map((property) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} key={property.property_id}>
+        <Grid item xs={12} sm={6} md={4} key={property.property_id}>
           <PropertyCard property={property} />
         </Grid>
       ))}

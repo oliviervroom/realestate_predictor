@@ -26,6 +26,10 @@ const SearchBar = ({ onDataSourceChange, dataSource: externalDataSource }) => {
   // Handle data source change
   const handleDataSourceChange = (event) => {
     const newDataSource = event.target.value;
+    if (newDataSource === 'mls') {
+      navigate('/mls');
+      return;
+    }
     setDataSource(newDataSource);
     if (onDataSourceChange) {
       onDataSourceChange(newDataSource);

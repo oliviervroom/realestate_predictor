@@ -1,21 +1,15 @@
 import React, { useState, useRef } from 'react';
 
-const SearchBar = ({ onSearch, dataSource }) => {
+const SearchBar = ({ onSearch }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedDataSource, setSelectedDataSource] = useState(dataSource || 'realty');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const suggestionsRef = useRef(null);
 
   const handleInputChange = (e) => {
     setSearchQuery(e.target.value);
-    setShowSuggestions(true);
-  };
-
-  const handleDataSourceChange = (e) => {
-    setSelectedDataSource(e.target.value);
     setShowSuggestions(true);
   };
 
@@ -28,14 +22,8 @@ const SearchBar = ({ onSearch, dataSource }) => {
 
     try {
       const searchParams = {
-        query: query.trim(),
-        dataSource: selectedDataSource
+        query: query.trim()
       };
-
-      // If we're using MLS data, we'll do a direct search
-      if (selectedDataSource === 'mls') {
-        searchParams.directSearch = true;
-      }
 
       await onSearch(searchParams);
     } catch (error) {
@@ -71,15 +59,6 @@ const SearchBar = ({ onSearch, dataSource }) => {
             </div>
           )}
         </div>
-        
-        <select 
-          value={selectedDataSource} 
-          onChange={handleDataSourceChange}
-          className="data-source-select"
-        >
-          <option value="realty">Realty API</option>
-          <option value="mls">MLS Data</option>
-        </select>
 
         <button 
           onClick={() => handleSearch()} 

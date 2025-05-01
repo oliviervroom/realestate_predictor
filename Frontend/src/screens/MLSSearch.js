@@ -1,35 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Grid, Typography, Box, CircularProgress } from '@mui/material';
 import MLSSearchBar from '../components/MLSSearchBar';
 import PropertyCard from '../components/PropertyCard/PropertyCard';
-import { searchMLSProperties, loadMLSData } from '../services/mlsApi';
+import { searchMLSProperties } from '../services/mlsApi';
 import '../styles/mls.css';
 
 const MLSSearch = () => {
   const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    loadInitialProperties();
-  }, []);
-
-  const loadInitialProperties = async () => {
-    try {
-      const mlsData = await loadMLSData();
-      // Take first 5 properties from the dataset
-      setProperties(mlsData.slice(0, 5));
-    } catch (error) {
-      console.error('Error loading initial properties:', error);
-      setError('Failed to load initial properties.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async (searchParams) => {
     setLoading(true);
     setError(null);
+    setHasSearched(true);
 
     try {
       const results = await searchMLSProperties(searchParams.query, {
@@ -44,42 +29,50 @@ const MLSSearch = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <div className="mls-search-page">
-      <Typography variant="h4" component="h1" gutterBottom>
-        MLS Property Search
-      </Typography>
-      
+    <Box sx={{ p: 3 }}>
       <MLSSearchBar onSearch={handleSearch} />
       
-      {loading && (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress />
-        </Box>
-      )}
-
       {error && (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
           <Typography color="error">{error}</Typography>
         </Box>
       )}
 
-      {!loading && !error && properties.length === 0 && (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+      {!hasSearched && (
+        <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
           <Typography color="textSecondary">
-            No properties found. Try adjusting your search.
+            Enter an address or location to search MLS listings
           </Typography>
         </Box>
       )}
 
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        {properties.map((property) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={property.property_id}>
-            <PropertyCard property={property} />
-          </Grid>
-        ))}
-      </Grid>
-    </div>
+      {hasSearched && !loading && !error && properties.length === 0 && (
+        <Box display="flex" justifyContent="center" alignItems="center" mt={3}>
+          <Typography color="textSecondary">
+            No properties found. Try a different search.
+          </Typography>
+        </Box>
+      )}
+
+      {properties.length > 0 && (
+        <Grid container spacing={3} sx={{ mt: 3 }}>
+          {properties.map((property) => (
+            <Grid item xs={12} sm={6} md={4} key={property.property_id}>
+              <PropertyCard property={property} />
+            </Grid>
+          ))}
+        </Grid>
+      )}
+    </Box>
   );
 };
 

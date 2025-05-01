@@ -34,6 +34,7 @@ import { searchProperties } from '../../services/realtyApi';
 import { searchMLSProperties } from '../../services/mlsApi';
 import { WORKING_VERSION, EDIT_VERSION } from '../../version';
 import Header from '../../components/Header';
+import DevModeWrapper from '../../components/DevToggle/DevModeWrapper';
 
 // Move buildFilters outside the component to avoid dependency issues
 const buildFilters = (stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft) => {
@@ -212,11 +213,6 @@ const Properties = () => {
           flexDirection: 'column',
           height: view === 'map' ? '100vh' : 'auto'
         }}>
-          {/* Version info */}
-          <Typography variant="caption" display="block" gutterBottom>
-            Working {WORKING_VERSION} (Edit {EDIT_VERSION})
-          </Typography>
-
           {/* Header with search */}
           <Box sx={{ mb: 3 }}>
             <SearchBar onDataSourceChange={setDataSource} dataSource={dataSource} />
@@ -321,7 +317,9 @@ const Properties = () => {
           )}
 
           {/* API Debug Information */}
-          <ApiDebugInfo debugInfo={debugInfo} />
+          <DevModeWrapper>
+            <ApiDebugInfo debugInfo={debugInfo} />
+          </DevModeWrapper>
         </Box>
       </Container>
     </Box>
