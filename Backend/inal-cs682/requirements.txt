@@ -1,5 +1,5 @@
 # Use conda: 
-# conda create --name myenv python=3.6.9
+# conda create --name myenv python=3.8.10
 
 tensorflow==2.5.0
 scikit-learn
