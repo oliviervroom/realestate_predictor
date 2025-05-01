@@ -13,4 +13,4 @@ flask == 3.0.0
 werkzeug ==  3.0.1
 jax == 0.4.13
 libclang == 16.0.0
-google-auth-oauthlib == 0.4.6
+google-auth-oauthlib
