@@ -55,10 +55,28 @@ const generatePredictions = (property) => {
   // Rental price: 1-3% of list price
   const rentalPercentage = 0.01 + (normalizedHash * 0.02); // 1-3%
   const predictedRent = Math.round(listPrice * rentalPercentage);
+  const medianRentInArea = Math.round(predictedRent * (0.9 + normalizedHash * 0.2)); // ±10%
+
+  const medianRent = Math.round(predictedRent * 1.05); // 5% above predicted
+  const rentStdDev = Math.round(medianRent * 0.1); // 10% standard deviation
+  const differenceFromMedian = Math.abs(medianRent - predictedRent);
+
+  const likelihoodOfRenting =
+  differenceFromMedian < rentStdDev * 0.5
+    ? "High (Market Aligned)"
+    : differenceFromMedian < rentStdDev
+    ? "Medium (Slightly Off)"
+    : "Low (Price Mismatch)";
+  const compsUsed = 10 + Math.floor(normalizedHash * 10); // 10–20 comps
+
   
   return {
     predictedSalePrice,
-    predictedRent
+    predictedRent,
+    medianRentInArea,
+    differenceFromMedian,
+    likelihoodOfRenting,
+    compsUsed
   };
 };
 
@@ -92,15 +110,15 @@ const PropertyInfo = () => {
     Medium: 'This property shows a moderate investment risk. Proceed with some caution.',
     High: 'This property shows a high investment risk. Carefully review before investing.'
   };
-  const predictedRent1 = 2500;
-  const optimalRent = 2400;
-  const graphData = [
-    { rent: 2000, likelihood: 0.3 },
-    { rent: 2200, likelihood: 0.5 },
-    { rent: 2400, likelihood: 1 },
-    { rent: 2600, likelihood: 0.7 },
-    { rent: 2800, likelihood: 0.4 },
-  ];
+  // const predictedRent1 = 2500;
+  // const optimalRent = 2400;
+  // const graphData = [
+  //   { rent: 2000, likelihood: 0.3 },
+  //   { rent: 2200, likelihood: 0.5 },
+  //   { rent: 2400, likelihood: 1 },
+  //   { rent: 2600, likelihood: 0.7 },
+  //   { rent: 2800, likelihood: 0.4 },
+  // ];
   const [showRawData, setShowRawData] = useState(false);
   const [rawCsvData, setRawCsvData] = useState('');
   const [mlsData, setMlsData] = useState(null);
@@ -715,13 +733,12 @@ const PropertyInfo = () => {
                 </Typography>
 
                 <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', color: '#555' }}>
-                  <li><strong>📍 Location:</strong> {property?.location?.address?.city || "City Unknown"}, {property?.location?.address?.state_code || "State Unknown"}</li>
-                  <li><strong>📐 Square Footage:</strong> {property?.description?.sqft ? `${property.description.sqft} sqft` : "Not available"}</li>
-                  <li><strong>🛏️ Bedrooms:</strong> {property?.description?.beds || "N/A"} beds</li>
-                  <li><strong>🛁 Bathrooms:</strong> {property?.description?.baths || "N/A"} baths</li>
-                  <li><strong>🏠 Property Type:</strong> {property?.prop_type || "N/A"}</li>
-                  <li><strong>🚗 Parking:</strong> {property?.parking?.spaces ? `${property.parking.spaces} spaces` : "No dedicated parking"}</li>
-                  <li><strong>📄 Rental Terms:</strong> Annual Lease</li>
+                  
+                  {/* <li><strong>📍 Location:</strong> {property?.location?.address?.city || "City Unknown"}, {property?.location?.address?.state_code || "State Unknown"}</li> */}
+                  <li><strong> Median Rent in Area: </strong>${predictions?.medianRentInArea?.toLocaleString() || 'N/A'}</li>
+                  <li><strong> Difference from Median: </strong> ${predictions?.differenceFromMedian?.toLocaleString() || 'N/A'}</li>
+                  <li><strong> Likelihood of Renting: </strong> {predictions?.likelihoodOfRenting || 'N/A'}</li>
+                  <li>  Based on <strong>{predictions?.compsUsed || 'N/A'} </strong>local comps</li>
                 </ul>
 
                 <Typography variant="body2" color="text.secondary">
