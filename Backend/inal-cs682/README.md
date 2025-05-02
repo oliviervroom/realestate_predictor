@@ -9,7 +9,7 @@ See project requirements and documentation in requirements.txt, DOCUMENTATION.tx
 1. Clone the repo:
 `git clone https://github.com/oliviervroom/realestate_predictor.git`
 
-2. Change directory to realestate_predictor/Backend/inal-cs682
+2. Change directory: `cd realestate_predictor/Backend/inal-cs682`
 
 3. Create a virtual environment (recommended, using conda):
 `conda create --name your_env_name python=3.10.12`
