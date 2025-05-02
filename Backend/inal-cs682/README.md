@@ -23,5 +23,5 @@ See project requirements and documentation in requirements.txt, DOCUMENTATION.tx
 6. To run the Flask app:
 `python3 app.py`
 
-7. Open the app in browser. Alternatively, run evaluate.py to use the model for interence, train.py to train the model.
+7. Open the app in browser. Alternatively, run `evaluate.py` to use the model for interence, `train.py` to train the model.
 Use `Backend/inal-cs682/miscellaneous/sample-API-response.csv` as sample input.
