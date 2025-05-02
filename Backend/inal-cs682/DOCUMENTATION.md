@@ -29,7 +29,7 @@ BE MINDFUL OF HOW YOU USE THIS SCRIPT: it computes the mean absolute error (MAE)
 - preprocess.py contains functions that transform raw API data and make it compatible with the model - property features are extracted, encoded, etc. 
 
 Project tree: 
-
+`
 inal-cs682/
 ├── config
 │   └── config.json
@@ -82,3 +82,4 @@ inal-cs682/
 │   └── utils
 │       └── data_loader.py
 └── train.py
+`
