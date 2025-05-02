@@ -26,6 +26,8 @@ BE MINDFUL OF HOW YOU USE THIS SCRIPT: it computes the mean absolute error (MAE)
 
 - requirements.txt has all of the required tools and package versions
 
+- preprocess.py contains functions that transform raw API data and make it compatible with the model - property features are extracted, encoded, etc. 
+
 Project tree: 
 
 inal-cs682/
@@ -65,6 +67,8 @@ inal-cs682/
 |-- templates
 |   |
 |   |-- index.html
+|
+|-- preprocess.py
 |
 |-- miscellaneous
 |   |
