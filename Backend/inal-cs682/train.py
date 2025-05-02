@@ -61,7 +61,7 @@ def main():
     )
 
     # Log the training output
-    log_file_path = "./cs682/experiments/training_logs-n.txt"
+    log_file_path = "./experiments/training_logs-n.txt"
     log_file = open(log_file_path, "w")
 
     # Write hyperparameters to the log file
