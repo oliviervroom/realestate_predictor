@@ -24,3 +24,4 @@ pip install -r requirements.txt
 python3 app.py
 
 7. Open the app in broswer. Alternatively, run evaluate.py to use the model for interence, train.py to train the model.
+Use Backend/inal-cs682/miscellaneous/sample-API-response.csv as sample input.
