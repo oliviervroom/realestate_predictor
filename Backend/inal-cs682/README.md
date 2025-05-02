@@ -27,7 +27,8 @@ See project requirements and tree in `requirements.txt`, `tree.txt`.
 Use `Backend/inal-cs682/miscellaneous/sample-API-response.csv` as sample input.
 
 
-# Documentation:
+# General Documentation:
+### Note: individual programs have documentation within the programs themselves.
 
 - `inal-cs682` is the root directory of the project and the root directory to which all relative paths refer.
 
