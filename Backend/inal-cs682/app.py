@@ -8,7 +8,7 @@ app = Flask(__name__)
 MODEL_PATH = "./experiments/model-1"
 model = tf.keras.models.load_model(MODEL_PATH)
 
-# Hardcoded feature columns in training order
+# feature columns in training order
 feature_columns = [
     'NO_BEDROOMS', 'NO_FULL_BATHS', 'NO_HALF_BATHS', 'TOTAL_BATHS',
     'SQUARE_FEET', 'AboveGradeFinishedArea', 'SQUARE_FEET_INCL_BASE',
