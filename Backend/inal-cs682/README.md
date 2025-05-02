@@ -4,7 +4,7 @@ Use Model 1 (best performance).
 See project requirements and documentation in requirements.txt, DOCUMENTATION.txt.
 
 
-** Overview **
+# Overview
 
 1. Clone the repo:
 `git clone https://github.com/oliviervroom/realestate_predictor.git`
