@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-# Hardcoded list of feature columns used during training
+# list of feature columns used during training
 TRAIN_COLUMNS = [
     'NO_BEDROOMS', 'NO_FULL_BATHS', 'NO_HALF_BATHS', 'TOTAL_BATHS',
     'SQUARE_FEET', 'AboveGradeFinishedArea', 'SQUARE_FEET_INCL_BASE',
