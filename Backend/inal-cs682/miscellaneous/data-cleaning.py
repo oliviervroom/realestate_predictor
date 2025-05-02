@@ -51,7 +51,7 @@ for col in continuous_columns:
     IQR = Q3 - Q1
     df = df[(df[col] >= Q1 - 1.5 * IQR) & (df[col] <= Q3 + 1.5 * IQR)]
 
-# 5. Prepare for Machine Learning (Convert to float)
+# 5. Convert to float
 X = df.drop(columns=['LIST_PRICE'])  # Features (all columns except 'LIST_PRICE')
 y = df['LIST_PRICE']  # Target variable ('LIST_PRICE')
 
