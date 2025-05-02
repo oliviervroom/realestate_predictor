@@ -40,7 +40,7 @@ miscellaneous/data-cleaning.py
 - `evaluate.py` picks a feature vector of a property (see the script), and makes a prediction based on it, (while also comparing the prediction to the actual observed value corresponding to the feature vector if it comes from the dataset). 
 BE MINDFUL OF HOW YOU USE THIS SCRIPT: it computes the mean absolute error (MAE) between the prediction and the observed value, but if your observed value specified in the script doesn't match the corresponding feature vector, the MAE computation will make no sense, as the prices are for different properties. 
 
-  - NOTE: `evaluate.py` is meant for demonstration purposes, its functionality is integrated into `app.py`.
+  - NOTE: `evaluate.py` is meant for demonstration purposes, its functionality is integrated into `app.py`. Same goes for `data-cleaning.py`, which is meant to be used for reference if needed, and was only applied on the original training data.
 
 - `experiments/` directory contains some of the saved training results, although the model saved as model-1 performs best, so the remaining ones can be (and have been) disposed of. The training logs can be found in the corresponding log files.
 
@@ -56,4 +56,4 @@ BE MINDFUL OF HOW YOU USE THIS SCRIPT: it computes the mean absolute error (MAE)
 
 - `requirements.txt` has all of the required tools and package versions
 
-- `preprocess.py` contains functions that transform raw API data and make it compatible with the model - property features are extracted, encoded, etc.
+- `preprocess.py` contains functions that transform raw API data and make it compatible with the model - property features are extracted, encoded, etc. Note that the functionality of `preprocess.py` is integrated into `app.py`, whereas the former was simply the original program containing that functionality.
