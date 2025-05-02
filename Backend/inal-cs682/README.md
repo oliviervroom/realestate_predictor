@@ -7,7 +7,7 @@ See project requirements and documentation in requirements.txt, DOCUMENTATION.tx
 ** Overview **
 
 1. Clone the repo:
-git clone https://github.com/oliviervroom/realestate_predictor.git
+`git clone https://github.com/oliviervroom/realestate_predictor.git`
 
 2. Change directory to realestate_predictor/Backend/inal-cs682
 
