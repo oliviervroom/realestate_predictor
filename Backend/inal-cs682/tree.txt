@@ -42,6 +42,7 @@ inal-cs682/
 |
 |-- miscellaneous
 |   |
+|   |-- sample-API-response.csv
 |   |-- data-cleaning.py  
 |
 ├── README.md
