@@ -37,8 +37,7 @@ Use `Backend/inal-cs682/miscellaneous/sample-API-response.csv` as sample input.
 - `data/` directory contains the X (`features.csv`) and the target Y (`targets.csv`) files, which come from Olivier's data cleaned using 
 `miscellaneous/data-cleaning.py`
 
-- `evaluate.py` picks a feature vector of a property (see the script), and makes a prediction based on it, (while also comparing the prediction to the actual observed value corresponding to the feature vector if it comes from the dataset). 
-BE MINDFUL OF HOW YOU USE THIS SCRIPT: it computes the mean absolute error (MAE) between the prediction and the observed value, but if your observed value specified in the script doesn't match the corresponding feature vector, the MAE computation will make no sense, as the prices are for different properties. 
+- `evaluate.py` picks a feature vector of a property (see the script), and makes a prediction based on it, (while also comparing the prediction to the actual observed value corresponding to the feature vector if it comes from the dataset). `evaluate.py` takes a command line input argument `--indexprop your_value` which makes a prediction on the test data property at index `your_value`. The script essentially contains the functionality of `app.py`, and is meant for demonstration purposes.
 
   - NOTE: `evaluate.py` is meant for demonstration purposes, its functionality is integrated into `app.py`. Same goes for `data-cleaning.py`, which is meant to be used for reference if needed, and was only applied on the original training data.
 
