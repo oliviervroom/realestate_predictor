@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import tensorflow as tf
 import pandas as pd
+from predict import predict_price
 
 app = Flask(__name__)
 
@@ -72,6 +73,16 @@ def predict():
 
     except Exception as e:
         return f"<h3 style='color:red'>An error occurred: {str(e)}</h3>"
+
+
+@app.route('/api/predict', methods=['POST'])
+def api_predict():
+    try:
+        property_data = request.json
+        prediction = predict_price(property_data)
+        return jsonify({'prediction': prediction})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 
 if __name__ == '__main__':

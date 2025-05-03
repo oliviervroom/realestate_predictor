@@ -2,7 +2,7 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 7;
+export const EDIT_VERSION = 8;
 
 // Version details for changelog
 export const versionDetails = {

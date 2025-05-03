@@ -23,8 +23,9 @@ import PropertyMap from '../../components/Map/PropertyMap';
 import { getPredictedRent } from '../../services/realtyApi';
 import CloseIcon from '@mui/icons-material/Close';
 import CodeIcon from '@mui/icons-material/Code';
-import { searchMLSProperties, loadMLSData } from '../../services/mlsApi';
+import { searchMLSProperties, loadMLSData, getPricePrediction } from '../../services/mlsApi';
 import DevModeWrapper from '../../components/DevToggle/DevModeWrapper';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Simple hash function to generate a stable number from a string
 const hashString = (str) => {
@@ -105,6 +106,9 @@ const PropertyInfo = () => {
   const [rawCsvData, setRawCsvData] = useState('');
   const [mlsData, setMlsData] = useState(null);
   const [predictedPrice, setPredictedPrice] = useState(null);
+  const [predictionLoading, setPredictionLoading] = useState(false);
+  const [predictionError, setPredictionError] = useState(null);
+  const [mlsPredictedPrice, setMlsPredictedPrice] = useState(null);
 
   const handleCopyToClipboard = (text, label) => {
     navigator.clipboard.writeText(JSON.stringify(text, null, 2))
@@ -249,6 +253,28 @@ const PropertyInfo = () => {
       setPredictedPrice(predictions?.predictedSalePrice || null);
     }
   }, [property]);
+
+  useEffect(() => {
+    if (mlsData) {
+      setPredictionLoading(true);
+      setPredictionError(null);
+      setMlsPredictedPrice(null);
+      getPricePrediction(mlsData.raw_data)
+        .then((pred) => {
+          if (pred !== null && pred !== undefined) {
+            setMlsPredictedPrice(pred);
+          } else {
+            setPredictionError('Prediction unavailable');
+          }
+        })
+        .catch(() => setPredictionError('Prediction unavailable'))
+        .finally(() => setPredictionLoading(false));
+    } else {
+      setMlsPredictedPrice(null);
+      setPredictionError(null);
+      setPredictionLoading(false);
+    }
+  }, [mlsData]);
 
   const predictions = generatePredictions(property);
 
@@ -491,12 +517,28 @@ const PropertyInfo = () => {
                     <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                       Predicted Sale Price
                     </Typography>
-                    <Typography variant="h4" fontWeight="bold" color={predictions?.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
-                      ${predictions?.predictedSalePrice?.toLocaleString() || 'Calculating...'}
-                    </Typography>
-                    {predictions?.predictedSalePrice && (
-                      <Typography variant="body2" color={predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
-                        {predictions.predictedSalePrice > (property?.list_price || 0) ? '↑' : '↓'} {Math.abs(Math.round((predictions.predictedSalePrice / (property?.list_price || 1) - 1) * 100))}% from list price
+                    {predictionLoading ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CircularProgress size={24} color="primary" />
+                        <Typography variant="body1" color="text.secondary">Loading prediction...</Typography>
+                      </Box>
+                    ) : predictionError ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CircularProgress size={24} color="error" variant="determinate" value={100} />
+                        <Typography variant="body1" color="error">{predictionError}</Typography>
+                      </Box>
+                    ) : mlsPredictedPrice !== null ? (
+                      <>
+                        <Typography variant="h4" fontWeight="bold" color={mlsPredictedPrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                          ${mlsPredictedPrice.toLocaleString()}
+                        </Typography>
+                        <Typography variant="body2" color={mlsPredictedPrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                          {mlsPredictedPrice > (property?.list_price || 0) ? '↑' : '↓'} {Math.abs(Math.round((mlsPredictedPrice / (property?.list_price || 1) - 1) * 100))}% from list price
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography variant="h4" fontWeight="bold" color={predictions?.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                        ${predictions?.predictedSalePrice?.toLocaleString() || 'Calculating...'}
                       </Typography>
                     )}
                   </Box>

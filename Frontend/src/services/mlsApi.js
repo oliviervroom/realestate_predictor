@@ -381,4 +381,43 @@ export const getMLSLocationSuggestions = async (query) => {
     console.error('Error getting MLS location suggestions:', error);
     return [];
   }
+};
+
+// Function to get price prediction for a property
+export const getPricePrediction = async (propertyData) => {
+  try {
+    const endpoint = '/api/predict';
+    console.log('[getPricePrediction] POST', endpoint, 'Payload:', propertyData);
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(propertyData)
+    });
+
+    const responseClone = response.clone();
+    let responseBody;
+    try {
+      responseBody = await responseClone.text();
+    } catch (e) {
+      responseBody = '[unreadable]';
+    }
+    console.log('[getPricePrediction] Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Array.from(response.headers.entries()),
+      body: responseBody
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get prediction: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.prediction;
+  } catch (error) {
+    console.error('Error getting price prediction:', error);
+    return null;
+  }
 }; 
