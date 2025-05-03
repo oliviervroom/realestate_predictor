@@ -550,59 +550,61 @@ const PropertyInfo = () => {
                 </Typography>
 
                 {/* Raw MLS Data Section */}
-                <Box sx={{ mt: 3, borderTop: '1px solid #e0e0e0', pt: 3 }}>
-                  <Button
-                    variant="outlined"
-                    startIcon={<CodeIcon />}
-                    onClick={() => setShowRawData(true)}
-                    sx={{ mb: 2 }}
-                  >
-                    View Raw MLS Data for Price Prediction
-                  </Button>
+                <DevModeWrapper>
+                  <Box sx={{ mt: 3, borderTop: '1px solid #e0e0e0', pt: 3 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CodeIcon />}
+                      onClick={() => setShowRawData(true)}
+                      sx={{ mb: 2 }}
+                    >
+                      View Raw MLS Data for Price Prediction
+                    </Button>
 
-                  <Dialog
-                    open={showRawData}
-                    onClose={() => setShowRawData(false)}
-                    maxWidth="md"
-                    fullWidth
-                  >
-                    <DialogTitle>
-                      Raw MLS Data for Price Prediction
-                      <IconButton
-                        aria-label="close"
-                        onClick={() => setShowRawData(false)}
-                        sx={{ position: 'absolute', right: 8, top: 8 }}
-                      >
-                        <CloseIcon />
-                      </IconButton>
-                    </DialogTitle>
-                    <DialogContent>
-                      <Box sx={{ position: 'relative' }}>
+                    <Dialog
+                      open={showRawData}
+                      onClose={() => setShowRawData(false)}
+                      maxWidth="md"
+                      fullWidth
+                    >
+                      <DialogTitle>
+                        Raw MLS Data for Price Prediction
                         <IconButton
-                          sx={{ position: 'absolute', right: 0, top: 0 }}
-                          onClick={() => handleCopyToClipboard(rawCsvData, 'Raw MLS Data')}
+                          aria-label="close"
+                          onClick={() => setShowRawData(false)}
+                          sx={{ position: 'absolute', right: 8, top: 8 }}
                         >
-                          <ContentCopyIcon />
+                          <CloseIcon />
                         </IconButton>
-                        <pre style={{ 
-                          whiteSpace: 'pre-wrap', 
-                          wordWrap: 'break-word',
-                          backgroundColor: '#f5f5f5',
-                          padding: '1rem',
-                          borderRadius: '4px',
-                          maxHeight: '60vh',
-                          overflow: 'auto',
-                          fontFamily: 'monospace'
-                        }}>
-                          {rawCsvData || 'No raw MLS data available'}
-                        </pre>
-                      </Box>
-                    </DialogContent>
-                    <DialogActions>
-                      <Button onClick={() => setShowRawData(false)}>Close</Button>
-                    </DialogActions>
-                  </Dialog>
-                </Box>
+                      </DialogTitle>
+                      <DialogContent>
+                        <Box sx={{ position: 'relative' }}>
+                          <IconButton
+                            sx={{ position: 'absolute', right: 0, top: 0 }}
+                            onClick={() => handleCopyToClipboard(rawCsvData, 'Raw MLS Data')}
+                          >
+                            <ContentCopyIcon />
+                          </IconButton>
+                          <pre style={{ 
+                            whiteSpace: 'pre-wrap', 
+                            wordWrap: 'break-word',
+                            backgroundColor: '#f5f5f5',
+                            padding: '1rem',
+                            borderRadius: '4px',
+                            maxHeight: '60vh',
+                            overflow: 'auto',
+                            fontFamily: 'monospace'
+                          }}>
+                            {rawCsvData || 'No raw MLS data available'}
+                          </pre>
+                        </Box>
+                      </DialogContent>
+                      <DialogActions>
+                        <Button onClick={() => setShowRawData(false)}>Close</Button>
+                      </DialogActions>
+                    </Dialog>
+                  </Box>
+                </DevModeWrapper>
               </Paper>
             </Box>
 

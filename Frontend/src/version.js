@@ -160,9 +160,23 @@ export const versionDetails = {
 
 // Export both versions separately
 export const VERSIONS = {
-  working: '1.0.10',
-  edit: 9,
-  history: versionDetails
+  working: '1.0.11',
+  edit: '16',
+  history: versionDetails,
+  changelog: {
+    '1.0.11': 'Hide raw MLS data button when dev mode is disabled',
+    '1.0.10': 'Added consistent predictions across property cards and detail pages',
+    '1.0.9': 'Development mode now enabled by default',
+    '1.0.8': 'Consolidated version display into single yellow box',
+    '1.0.7': 'Added dev mode toggle with hover functionality',
+    '1.0.6': 'Added version display to property cards',
+    '1.0.5': 'Added version display to search results',
+    '1.0.4': 'Added version display to property info page',
+    '1.0.3': 'Added version display to search page',
+    '1.0.2': 'Added version display to home page',
+    '1.0.1': 'Added version display to header',
+    '1.0.0': 'Initial version'
+  }
 };
 
 // For backward compatibility with existing code
@@ -268,6 +282,14 @@ export const CHANGELOG = [
       'Added predicted rental price and monthly cashflow to property cards',
       'Implemented consistent predictions using property address hash',
       'Added visual indicators for positive/negative cashflow'
+    ]
+  },
+  {
+    version: '1.0.11',
+    date: '2024-04-30',
+    changes: [
+      'Hide raw MLS data button and dialog when dev mode is disabled',
+      'Wrapped MLS data section with DevModeWrapper component'
     ]
   }
 ]; 
