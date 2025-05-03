@@ -36,6 +36,7 @@ Make sure you have gitignore and the env file.
 To get started with your project, you'll first need to install the dependencies with:
 
 ```
+> Make a new terminal 
 cd realestate_predictor/Frontend
 
 npm install --legacy-peer-deps
