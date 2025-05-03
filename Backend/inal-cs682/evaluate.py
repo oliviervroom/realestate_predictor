@@ -49,7 +49,7 @@ def main():
     print("\nPrediction for the sample in X_test: \n")
     print(prediction)
 
-    print(f"\n ************* \n MAE between the two: {abs(prediction - y_test.iloc[i])} \n ************* \n ")
+    print(f"\n ************* \n Absolute error between the two: {abs(prediction - y_test.iloc[i])} \n ************* \n ")
 
 if __name__ == "__main__":
     main()
