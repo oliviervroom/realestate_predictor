@@ -98,7 +98,6 @@ def index():
     
     predicted_price = None
     description = None
-    verdict = None
 
     if request.method == "POST":
         if 'inputvector' not in request.files:
