@@ -20,7 +20,7 @@ def main():
         # Set the specific GPU (e.g., GPU 0, in my case 3)
         tf.config.set_visible_devices(gpus[0], 'GPU')
 
-        print("Using GPU:", gpus[3].name)
+        print("Using GPU:", gpus[0].name)
     else:
         print("No GPU available, using CPU.")
 
