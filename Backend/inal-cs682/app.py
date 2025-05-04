@@ -5,10 +5,6 @@ import torch
 import sys
 import logging
 
-# Disable TensorFlow and DeepSpeed logs
-sys.modules['tensorflow'] = tf  # We need TF here for the price model
-logging.getLogger("deepspeed").setLevel(logging.ERROR)
-
 # Initialize Flask app
 app = Flask(__name__)
 
