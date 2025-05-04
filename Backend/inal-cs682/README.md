@@ -52,6 +52,7 @@ Use `Backend/inal-cs682/miscellaneous/sample-API-response.csv` as sample input.
 - `src/utils/data_loader.py` loads the data into the model
 
 - `train.py` is the training script
+- `predict.py` contains functionality to make a price prediction for an individual property.
 
 - `requirements.txt` has all of the required tools and package versions
 
