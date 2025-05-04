@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Property Price Predictor</title>
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 
   <style>
@@ -16,7 +13,6 @@
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #1e293b, #3b0764);
       min-height: 100vh;
-      position: relative;
       overflow: hidden;
     }
 
@@ -60,31 +56,21 @@
 </head>
 <body class="flex items-center justify-center p-6 text-white">
 
-  <!-- Decorative Background Elements -->
   <div class="decorative-circle circle-1"></div>
   <div class="decorative-circle circle-2"></div>
 
-  <!-- Main Card -->
   <div class="glow-card relative z-10 max-w-xl w-full">
     <div class="text-center mb-6">
       <div class="flex justify-center mb-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10l9-6 9 6v8a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-8z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 10l9-6 9 6v8a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4H9v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-8z"/>
         </svg>
       </div>
       <h1 class="text-3xl font-semibold drop-shadow">Property Price Predictor</h1>
       <p class="text-gray-300 mt-1">Upload property data and receive an instant price estimate.</p>
     </div>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="bg-indigo-200 text-gray-900 text-sm p-3 rounded mb-4 text-center">
-          {{ messages[0] }}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    <!-- Form -->
     <form action="/" method="post" enctype="multipart/form-data" class="space-y-5">
       <div>
         <label for="inputvector" class="block text-sm font-medium mb-1">Upload CSV File</label>
@@ -93,15 +79,28 @@
       </div>
       <button type="submit"
               class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2.5 rounded-lg transition shadow">
-         Predict Price
+        Predict Price
       </button>
     </form>
 
-    <!-- Prediction Result -->
     {% if predicted_price %}
       <div class="mt-6 p-4 bg-indigo-600 text-white text-center rounded-lg shadow">
         <h2 class="text-xl font-semibold">Estimated Price:</h2>
         <p class="text-2xl mt-2 font-bold tracking-wide animate-pulse">{{ predicted_price }}</p>
+      </div>
+    {% endif %}
+
+    {% if description %}
+      <div class="mt-4 p-4 bg-slate-800 text-white rounded-lg shadow">
+        <h3 class="text-lg font-semibold text-indigo-300 mb-2">Property Summary</h3>
+        <p class="text-sm text-white">{{ description }}</p>
+      </div>
+    {% endif %}
+
+    {% if verdict %}
+      <div class="mt-4 p-4 bg-emerald-700 text-white rounded-lg shadow">
+        <h3 class="text-lg font-semibold mb-2">Our Verdict</h3>
+        <p class="text-sm font-medium">{{ verdict }}</p>
       </div>
     {% endif %}
 
@@ -110,7 +109,6 @@
     </div>
   </div>
 
-  <!-- Submit Loading State -->
   <script>
     document.querySelector('form').addEventListener('submit', function () {
       const button = this.querySelector('button[type="submit"]');
@@ -118,6 +116,5 @@
       button.textContent = ' Predicting...';
     });
   </script>
-
 </body>
 </html>
