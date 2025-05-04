@@ -35,6 +35,18 @@ feature_columns = [
 
 # Preprocessing function
 def preprocess_single_input(raw_df):
+    '''
+    Transforms a raw 1-row DataFrame into the format expected by the trained model.
+    
+    - Converts "Yes"/"No" strings to binary (1/0)
+    - Applies one-hot encoding to categorical features: PROP_TYPE and COUNTY
+    - Ensures that all expected columns are present and ordered
+    - Fills in missing columns with zeros
+
+    Returns:
+        A single-row DataFrame with features in the correct order and format.
+    '''
+    
     raw_df["SQUARE_FEET_INCL_BASE"] = raw_df["SQUARE_FEET_INCL_BASE"].map({"Yes": 1, "No": 0}).astype(int)
     raw_df["BASEMENT"] = raw_df["BASEMENT"].map({"Yes": 1, "No": 0}).astype(int)
     raw_df = pd.get_dummies(raw_df, columns=["PROP_TYPE", "COUNTY"], dtype=int)
@@ -49,6 +61,12 @@ def preprocess_single_input(raw_df):
 def generate_description(raw_input_df):
     '''
     Creates a brief summary of the property.
+    The summary includes:
+    - Bedroom/bathroom count
+    - Square footage
+    - Year built
+    - Basement and fireplace status
+    - County name
     '''
     beds = int(raw_input_df['NO_BEDROOMS'].iloc[0])
     baths = float(raw_input_df['TOTAL_BATHS'].iloc[0])
@@ -71,6 +89,18 @@ def generate_description(raw_input_df):
 # Flask route
 @app.route("/", methods=["GET", "POST"])
 def index():
+
+        '''
+    Handles the main route for GET and POST requests.
+    
+    - On GET: renders the empty form
+    - On POST: processes the uploaded CSV, performs prediction, and generates feedback
+    
+    Returns:
+        - predicted_price: formatted string with currency
+        - description: human-readable property summary
+    '''
+    
     predicted_price = None
     description = None
     verdict = None
