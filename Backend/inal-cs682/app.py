@@ -48,7 +48,7 @@ def preprocess_single_input(raw_df):
 
 def generate_description(raw_input_df):
     '''
-    Creates a brief natural-language summary of the property.
+    Creates a brief summary of the property.
     '''
     beds = int(raw_input_df['NO_BEDROOMS'].iloc[0])
     baths = float(raw_input_df['TOTAL_BATHS'].iloc[0])
