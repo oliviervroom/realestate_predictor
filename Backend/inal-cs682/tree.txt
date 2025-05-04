@@ -38,6 +38,8 @@ inal-cs682/
 |   |
 |   |-- index.html
 |
+|-- predict.py
+|
 |-- preprocess.py
 |
 |-- miscellaneous
