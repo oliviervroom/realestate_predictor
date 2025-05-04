@@ -86,7 +86,7 @@ def generate_description(raw_input_df):
 @app.route("/", methods=["GET", "POST"])
 def index():
 
-        '''
+    '''
     Handles the main route for GET and POST requests.
     
     - On GET: renders the empty form
