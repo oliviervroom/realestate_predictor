@@ -1,14 +1,22 @@
 from flask import Flask, render_template, request
 import tensorflow as tf
 import pandas as pd
+import torch
+import sys
+import logging
 
+# Disable TensorFlow and DeepSpeed logs
+sys.modules['tensorflow'] = tf  # We need TF here for the price model
+logging.getLogger("deepspeed").setLevel(logging.ERROR)
+
+# Initialize Flask app
 app = Flask(__name__)
 
-# Load model
+# Load TF model for price prediction
 MODEL_PATH = "./experiments/model-1"
 model = tf.keras.models.load_model(MODEL_PATH)
 
-# Feature columns in training order
+# Define required feature order
 feature_columns = [
     'NO_BEDROOMS', 'NO_FULL_BATHS', 'NO_HALF_BATHS', 'TOTAL_BATHS',
     'SQUARE_FEET', 'AboveGradeFinishedArea', 'SQUARE_FEET_INCL_BASE',
@@ -25,30 +33,48 @@ feature_columns = [
     'COUNTY_Windham', 'COUNTY_Worcester', 'COUNTY_York'
 ]
 
-
+# Preprocessing function
 def preprocess_single_input(raw_df):
-    """
-    Preprocess a raw 1-row DataFrame into a model-ready input row.
-    """
-    # Convert Yes/No to 1/0
     raw_df["SQUARE_FEET_INCL_BASE"] = raw_df["SQUARE_FEET_INCL_BASE"].map({"Yes": 1, "No": 0}).astype(int)
     raw_df["BASEMENT"] = raw_df["BASEMENT"].map({"Yes": 1, "No": 0}).astype(int)
-
-    # One-hot encode categorical variables
     raw_df = pd.get_dummies(raw_df, columns=["PROP_TYPE", "COUNTY"], dtype=int)
 
-    # Add missing columns and ensure order
     for col in feature_columns:
         if col not in raw_df.columns:
             raw_df[col] = 0
-    raw_df = raw_df[feature_columns]
+    return raw_df[feature_columns].astype(float)
 
-    return raw_df.astype(float)
+# Generate description and verdict
+def describe_and_evaluate(raw_input_df, predicted_price):
+    desc = []
 
+    beds = int(raw_input_df['NO_BEDROOMS'].iloc[0])
+    baths = float(raw_input_df['TOTAL_BATHS'].iloc[0])
+    sqft = int(raw_input_df['SQUARE_FEET'].iloc[0])
+    year_built = int(raw_input_df['YEAR_BUILT'].iloc[0])
+    basement = raw_input_df['BASEMENT'].iloc[0]
+    fireplace = int(raw_input_df['FIRE_PLACES'].iloc[0])
+    county = raw_input_df['COUNTY'].iloc[0] if 'COUNTY' in raw_input_df.columns else "Unknown"
 
+    desc.append(f"The property is a {beds}-bedroom, {baths}-bath home with {sqft} sq ft of living space.")
+    desc.append(f"It was built in {year_built} and {'has' if basement == 'Yes' else 'does not have'} a basement.")
+    if fireplace > 0:
+        desc.append(f"It features {fireplace} fireplace{'s' if fireplace > 1 else ''}.")
+    desc.append(f"Located in {county} County.")
+
+    price_per_sqft = predicted_price / (sqft or 1)
+    verdict = "This seems like a great deal!" if price_per_sqft < 200 else \
+              "The price is reasonable." if price_per_sqft < 300 else \
+              "This may be overpriced."
+
+    return " ".join(desc), verdict
+
+# Flask route
 @app.route("/", methods=["GET", "POST"])
 def index():
     predicted_price = None
+    description = None
+    verdict = None
 
     if request.method == "POST":
         if 'inputvector' not in request.files:
@@ -66,11 +92,12 @@ def index():
                         X_input = preprocess_single_input(raw_df)
                         prediction = model.predict(X_input)[0][0]
                         predicted_price = f"${prediction:,.2f}"
+                        description, verdict = describe_and_evaluate(raw_df, prediction)
                 except Exception as e:
                     predicted_price = f"An error occurred: {str(e)}"
 
-    return render_template("index.html", predicted_price=predicted_price)
-
+    return render_template("index.html", predicted_price=predicted_price,
+                           description=description, verdict=verdict)
 
 if __name__ == "__main__":
     app.run(port=3000, debug=True)
