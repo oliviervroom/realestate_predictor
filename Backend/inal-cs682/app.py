@@ -44,30 +44,29 @@ def preprocess_single_input(raw_df):
             raw_df[col] = 0
     return raw_df[feature_columns].astype(float)
 
-# Generate description and verdict
-def describe_and_evaluate(raw_input_df, predicted_price):
-    desc = []
 
+
+def generate_description(raw_input_df):
+    '''
+    Creates a brief natural-language summary of the property.
+    '''
     beds = int(raw_input_df['NO_BEDROOMS'].iloc[0])
     baths = float(raw_input_df['TOTAL_BATHS'].iloc[0])
     sqft = int(raw_input_df['SQUARE_FEET'].iloc[0])
     year_built = int(raw_input_df['YEAR_BUILT'].iloc[0])
     basement = raw_input_df['BASEMENT'].iloc[0]
     fireplace = int(raw_input_df['FIRE_PLACES'].iloc[0])
-    county = raw_input_df['COUNTY'].iloc[0] if 'COUNTY' in raw_input_df.columns else "Unknown"
+    county = raw_input_df.get('COUNTY', pd.Series(["Unknown"])).iloc[0]
 
-    desc.append(f"The property is a {beds}-bedroom, {baths}-bath home with {sqft} sq ft of living space.")
-    desc.append(f"It was built in {year_built} and {'has' if basement == 'Yes' else 'does not have'} a basement.")
+    desc = [
+        f"The property is a {beds}-bedroom, {baths}-bath home with {sqft} sq ft of living space.",
+        f"It was built in {year_built} and {'has' if basement == 'Yes' else 'does not have'} a basement."
+    ]
     if fireplace > 0:
         desc.append(f"It features {fireplace} fireplace{'s' if fireplace > 1 else ''}.")
     desc.append(f"Located in {county} County.")
 
-    price_per_sqft = predicted_price / (sqft or 1)
-    verdict = "This seems like a great deal!" if price_per_sqft < 200 else \
-              "The price is reasonable." if price_per_sqft < 300 else \
-              "This may be overpriced."
-
-    return " ".join(desc), verdict
+    return " ".join(desc)
 
 # Flask route
 @app.route("/", methods=["GET", "POST"])
@@ -92,12 +91,12 @@ def index():
                         X_input = preprocess_single_input(raw_df)
                         prediction = model.predict(X_input)[0][0]
                         predicted_price = f"${prediction:,.2f}"
-                        description, verdict = describe_and_evaluate(raw_df, prediction)
+                        description = generate_description(raw_df)
                 except Exception as e:
                     predicted_price = f"An error occurred: {str(e)}"
 
     return render_template("index.html", predicted_price=predicted_price,
-                           description=description, verdict=verdict)
+                        description=description)
 
 if __name__ == "__main__":
     app.run(port=3000, debug=True)
