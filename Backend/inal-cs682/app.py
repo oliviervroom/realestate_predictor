@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 import tensorflow as tf
 import pandas as pd
-import torch
 import sys
 import logging
 
