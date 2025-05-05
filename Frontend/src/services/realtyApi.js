@@ -319,27 +319,4 @@ export const getLocationSuggestions = async (query) => {
   }
 };
 
-export const getPredictedRent = async (transformedInput) => {
-  try {
-    const response = await fetch('http://127.0.0.1:5000/predict-rent', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(transformedInput)
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to fetch predicted rent');
-    }
-
-    return result.predicted_rent;
-  } catch (error) {
-    console.error('Error getting predicted rent:', error);
-    return null; // Return null if error occurs
-  }
-};
-
 

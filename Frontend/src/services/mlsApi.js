@@ -97,9 +97,6 @@ export const loadMLSData = async () => {
     
     const csvText = await response.text();
     
-    // Log the first few lines of the CSV to debug
-    console.log('First few lines of CSV:', csvText.split('\n').slice(0, 3));
-    
     const results = Papa.parse(csvText, {
       header: true,
       skipEmptyLines: true,
@@ -110,7 +107,7 @@ export const loadMLSData = async () => {
         console.error('Papa Parse error:', error);
       },
       complete: (results) => {
-        console.log('Papa Parse complete. Fields found:', results.meta.fields);
+        // console.log('Papa Parse complete. Fields found:', results.meta.fields);
       }
     });
 
@@ -120,8 +117,8 @@ export const loadMLSData = async () => {
 
     // Log the first entry with its fields
     if (results.data && results.data.length > 0) {
-      console.log('First entry fields:', Object.keys(results.data[0]));
-      console.log('First entry data:', results.data[0]);
+      // console.log('First entry fields:', Object.keys(results.data[0]));
+      // console.log('First entry data:', results.data[0]);
     }
 
     cachedMLSData = results.data;
@@ -145,7 +142,7 @@ const convertToCommonFormat = (mlsProperty) => {
     location: {
       address: {
         line: mlsProperty.ADDRESS,
-        city: mlsProperty.TOWN,
+        city: mlsProperty.TOWN ?? mlsProperty.COUNTY,
         state_code: mlsProperty.STATE,
         postal_code: mlsProperty.ZIP_CODE?.toString()
       }
@@ -236,7 +233,6 @@ export const searchMLSProperties = async (query, options = {}) => {
     if (directSearch) {
       // Perform direct search without location matching
       const searchTerms = query.toLowerCase().split(' ');
-      console.log('Searching for terms:', searchTerms);
       
       const results = mlsData.filter(property => {
         // Create a searchable string from the property's address components
@@ -247,11 +243,8 @@ export const searchMLSProperties = async (query, options = {}) => {
           property.ZIP_CODE
         ].filter(Boolean).join(' ').toLowerCase();
         
-        console.log('Checking property:', propertyText);
-        
         // For exact address matches, check if the property address starts with the search query
-        if (property.ADDRESS?.toLowerCase().startsWith(query.toLowerCase())) {
-          console.log('Found exact address match:', property.ADDRESS);
+        if (property?.ADDRESS?.toLowerCase().startsWith(query.toLowerCase())) {
           return true;
         }
         
@@ -259,7 +252,6 @@ export const searchMLSProperties = async (query, options = {}) => {
         return searchTerms.every(term => propertyText.includes(term));
       });
       
-      console.log('Found results:', results.length);
       return results.map(convertToCommonFormat).filter(Boolean);
     }
 
@@ -387,7 +379,6 @@ export const getMLSLocationSuggestions = async (query) => {
 export const getPricePrediction = async (propertyData) => {
   try {
     const endpoint = '/api/predict';
-    console.log('[getPricePrediction] POST', endpoint, 'Payload:', propertyData);
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -421,3 +412,18 @@ export const getPricePrediction = async (propertyData) => {
     return null;
   }
 }; 
+
+// Fetch rent insights from backend for a given LIST_NO
+export const getFullRentInsights = async (address) => {
+  try {
+    const endpoint = `http://127.0.0.1:5000/api/rent-insights/${address}`;
+    const response = await fetch(endpoint);
+    if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Rent insight fetch error:", error);
+    return null;
+    
+  }
+  
+};
