@@ -9,23 +9,36 @@ The initial structure and code for the front-end was generated using bolt.new. T
 This application provides a user interface for real estate investors to find investment opportunities, and displays predicted rental and sale prices, which were calculated using AI models.
 
 ## Set up guide
-# Start back-end first
 
 1. Clone the repo:
 `git clone https://github.com/oliviervroom/realestate_predictor.git`
 
-2. Change directory: `cd realestate_predictor/Backend/inal-cs682`
+# Start back-end first
+# Rental prediction back-end
+### 1. Install dependencies
 
-3. Create a virtual environment (recommended, using conda):
+```bash
+cd realestate_predictor/Backend/katt-cs682`
+conda create --name envname   
+conda activate envname
+pip3 install pandas flask catboost scikit-learn
+pip3 install flask_cors
+python3 app.py
+```
+
+# Optional (for sale prediction)
+1. Change directory: `cd realestate_predictor/Backend/inal-cs682`
+
+2. Create a virtual environment (recommended, using conda):
 `conda create --name your_env_name python=3.10.12`
 
-4. Activate the virtual environment:
+3. Activate the virtual environment:
  `conda activate your_env_name`
 
-5. Install the requirements:
+4. Install the requirements:
 `pip install -r requirements.txt`
 
-6. Run the Flask app:
+5. Run the Flask app:
 `python3 app.py`
 
 # Start front-end
@@ -36,7 +49,7 @@ Make sure you have gitignore and the env file.
 To get started with your project, you'll first need to install the dependencies with:
 
 ```
-> Make a new terminal 
+> Make a new terminal!
 cd realestate_predictor/Frontend
 
 npm install --legacy-peer-deps
