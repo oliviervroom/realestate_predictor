@@ -37,6 +37,7 @@ def rental_optimization_insight(address: str, df_all: pd.DataFrame, model) -> st
     median_rent = comps["PREDICTED_RENT"].median()
     std_rent = comps["PREDICTED_RENT"].std()
     price_gap = predicted_rent - median_rent
+    optimal_rent =  predicted_rent
 
     if abs(price_gap) <= std_rent * 0.5:
         likelihood = "✅ High (Well-aligned with market)"
@@ -44,17 +45,22 @@ def rental_optimization_insight(address: str, df_all: pd.DataFrame, model) -> st
     elif price_gap > std_rent:
         likelihood = "⚠️ Lower (Priced too high)"
         suggestion = f"Consider reducing rent by ${abs(price_gap):.0f} to be closer to market."
+        optimal_rent = optimal_rent - abs(price_gap)
     else:
         likelihood = "💡 Could increase (Priced lower than comps)"
         suggestion = f"You could raise rent by ${abs(price_gap):.0f}, but ensure demand still exists."
+        optimal_rent = optimal_rent + abs(price_gap)
 
     return (
-        f"\n📍 RENTAL INCOME INSIGHT\n"
-        f"----------------------------\n"
-        f"🔮 Predicted Rent: ${predicted_rent:.2f}\n"
-        f"📊 Median Rent in Area: ${median_rent:.2f} ± {std_rent:.2f}\n"
-        f"📉 Difference from Median: ${price_gap:.2f}\n"
-        f"📈 Likelihood of Renting: {likelihood}\n"
-        f"📌 Based on {len(comps)} local comps.\n"
-        f"🛠️ Suggestion: {suggestion}\n"
+        # f"\n📍 RENTAL INCOME INSIGHT\n"
+        # f"----------------------------\n"
+        {
+            "predicted_rent": round(predicted_rent, 2),
+            "median_rent": median_rent,
+            "difference": round(price_gap, 2),
+            "likelihood": likelihood,
+            "num_comps": len(comps),
+            "suggestion": suggestion,
+            "optimal_rent": round(optimal_rent, 2)
+        }
     )

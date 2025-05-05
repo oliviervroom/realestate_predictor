@@ -1,3 +1,5 @@
+import pandas as pd
+import re
 from fruad import *
 from disclosure import *
 from renovation import *
@@ -80,3 +82,54 @@ def evaluation(filepath: str, target_address: str) -> str:
         f"Fraud Flag:           {'Yes' if fraud_flag else 'No'}\n"
         f"Total Risk Score:     {total_risk_score}\n"
     )
+
+# --- ✅ New: Rent Insights Function ---
+def evaluation_insights(list_no: str) -> dict:
+    try:
+        df = pd.read_csv("cleaned_data.csv")
+        # df.columns = df.columns.str.strip().str.upper().str.replace(" ", "_")
+        # df['LIST_NO'] = df['LIST_NO'].astype(str)
+        df["ADDRESS"] = df["ADDRESS"].astype(str).str.strip()
+        match = df[df["ADDRESS"].str.contains(list_no, case=False, na=False)]
+        if match.empty:
+            return {
+                "median_rent": None,
+                "difference_from_median": None,
+                "likelihood": None,
+                "num_comps": 0
+            }
+
+        row = match.iloc[0]
+        zip_code = row['ZIP_CODE']
+        prop_type = row['PROP_TYPE']
+        subject_rent = row['LIST_PRICE']
+
+        comps = df[(df['ZIP_CODE'] == zip_code) & (df['PROP_TYPE'] == prop_type)]
+        num_comps = len(comps)
+        if num_comps == 0:
+            return {
+                "median_rent": None,
+                "difference_from_median": None,
+                "likelihood": None,
+                "num_comps": 0
+            }
+
+        median_rent = comps['LIST_PRICE'].median()
+        diff = round(subject_rent - median_rent, 2)
+        likelihood = round(1 - abs(diff) / median_rent, 2)
+
+        return {
+            "median_rent": round(median_rent, 2),
+            "difference_from_median": diff,
+            "likelihood": likelihood,
+            "num_comps": num_comps
+        }
+
+    except Exception as e:
+        return {
+            "median_rent": None,
+            "difference_from_median": None,
+            "likelihood": None,
+            "num_comps": 0,
+            "error": str(e)
+        }

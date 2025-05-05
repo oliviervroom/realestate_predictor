@@ -48,4 +48,4 @@ def predict_rent_for_address(address: str, df_all: pd.DataFrame, model) -> str:
     pool = Pool(features, cat_features=cat_cols)
     predicted_rent = model.predict(pool)[0]
 
-    return f"ADDRESS: {address}\nAddress: {row['ADDRESS'].values[0]}\nPredicted Rent: ${predicted_rent:.2f}"
+    return f"{predicted_rent:.2f}"

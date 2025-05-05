@@ -9,23 +9,17 @@ import {
 } from 'recharts';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import ApiIcon from '@mui/icons-material/Api';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DataObjectIcon from '@mui/icons-material/DataObject';
-import MemoryIcon from '@mui/icons-material/Memory';
-import StorageIcon from '@mui/icons-material/Storage';
 import Header from '../../components/Header';
-import MapComponent from './MapComponent';
 import ErrorMessage from '../../components/ErrorMessage/ErrorMessage';
-import ApiDebugInfo from '../../components/ApiDebugInfo/ApiDebugInfo';
 import { VERSIONS } from '../../version';
 import PropertyMap from '../../components/Map/PropertyMap';
-import { getPredictedRent } from '../../services/realtyApi';
+// import { getPredictedRent } from '../../services/realtyApi';
 import CloseIcon from '@mui/icons-material/Close';
 import CodeIcon from '@mui/icons-material/Code';
-import { searchMLSProperties, loadMLSData, getPricePrediction } from '../../services/mlsApi';
+import { searchMLSProperties, loadMLSData,getFullRentInsights, getPricePrediction } from '../../services/mlsApi';
 import DevModeWrapper from '../../components/DevToggle/DevModeWrapper';
 import CircularProgress from '@mui/material/CircularProgress';
+
 
 // Simple hash function to generate a stable number from a string
 const hashString = (str) => {
@@ -65,7 +59,7 @@ const generatePredictions = (property) => {
 
 const PropertyInfo = () => {
   const location = useLocation();
-  const property = location?.state;
+  const property = location?.state || JSON.parse(localStorage.getItem('selectedProperty'));
   const allProperties = location?.state?.allProperties || [];
   const currentPropertyId = property?.property_id;
 
@@ -75,33 +69,6 @@ const PropertyInfo = () => {
   const [adjustedRent, setAdjustedRent] = useState(
     property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045)
   );
-  const [predictedRent, setPredictedRent] = useState(null);
-  const [debugInfo, setDebugInfo] = useState({
-    method: 'GET',
-    endpoint: '/properties/v3/detail',
-    request: { property_id: currentPropertyId },
-    response: property
-  });
-
-  const [open, setOpen] = useState(false);
-  const riskLevel = 'Medium'; // You can change this dynamically later (Low, Medium, High)
-
-  const riskColor = riskLevel === 'Low' ? 'success' : riskLevel === 'High' ? 'error' : 'warning';
-
-  const riskMessage = {
-    Low: 'This property shows a low investment risk based on current market data.',
-    Medium: 'This property shows a moderate investment risk. Proceed with some caution.',
-    High: 'This property shows a high investment risk. Carefully review before investing.'
-  };
-  const predictedRent1 = 2500;
-  const optimalRent = 2400;
-  const graphData = [
-    { rent: 2000, likelihood: 0.3 },
-    { rent: 2200, likelihood: 0.5 },
-    { rent: 2400, likelihood: 1 },
-    { rent: 2600, likelihood: 0.7 },
-    { rent: 2800, likelihood: 0.4 },
-  ];
   const [showRawData, setShowRawData] = useState(false);
   const [rawCsvData, setRawCsvData] = useState('');
   const [mlsData, setMlsData] = useState(null);
@@ -109,6 +76,15 @@ const PropertyInfo = () => {
   const [predictionLoading, setPredictionLoading] = useState(false);
   const [predictionError, setPredictionError] = useState(null);
   const [mlsPredictedPrice, setMlsPredictedPrice] = useState(null);
+  const [rentInsights, setRentInsights] = useState(null);
+  const totalRisk = rentInsights?.total_risk_score;
+  const riskLevel = totalRisk < 0.4 ? "Low" : totalRisk < 0.7 ? "Medium" : "High";
+  const riskColor = totalRisk < 0.4 ? "success" : totalRisk < 0.7 ? "warning" : "error";
+  const riskMessage = {
+    Low: 'This property shows a low investment risk based on current market data.',
+    Medium: 'This property shows a moderate investment risk. Proceed with some caution.',
+    High: 'This property shows a high investment risk. Carefully review before investing.'
+  };
 
   const handleCopyToClipboard = (text, label) => {
     navigator.clipboard.writeText(JSON.stringify(text, null, 2))
@@ -141,7 +117,7 @@ const PropertyInfo = () => {
 
     const errors = [];
     // Only validate critical data
-    if (!property.property_id) {
+    if (!property?.property_id) {
       const errorMessage = 'Property ID is missing';
       console.error('API Error:', {
         message: errorMessage,
@@ -151,7 +127,7 @@ const PropertyInfo = () => {
       errors.push(errorMessage);
     }
     // Check address under location.address.line
-    if (!property.location?.address?.line) {
+    if (!property?.location?.address?.line) {
       const errorMessage = 'Address is missing';
       console.error('API Error:', {
         message: errorMessage,
@@ -175,32 +151,13 @@ const PropertyInfo = () => {
   }, [property, currentPropertyId]);
 
   useEffect(() => {
-    const fetchPredictedRent = async () => {
-      if (!property) return;
-  
-      const transformedInput = {
-        NEIGHBORHOOD: property?.location?.neighborhood_name || "Unknown",
-        ZIP_CODE: property?.location?.address?.postal_code || "00000",
-        PROP_TYPE: property?.prop_type || "other",
-        SQUARE_FEET: property?.description?.sqft || 0,
-        LOT_SIZE: property?.lot_size || 0,
-        NO_BEDROOMS: property?.description?.beds || 0,
-        TOTAL_BATHS: property?.description?.baths || 0,
-        TOTAL_PARKING_RN: property?.parking?.spaces || "0",
-        FURNISHED_RN: "No", // placeholder
-        PETS_ALLOWED_RN: "No", // placeholder
-        SEC_DEPOSIT_RN: "No", // placeholder
-        TERM_OF_RENTAL_RN: "12 months", // placeholder
-        RENT_FEE_INCLUDES_RN: "None", // placeholder
-        RENTAL_TERMS_RN: "Annual", // placeholder
-        LIST_PRICE: property?.price || property?.list_price || 0
-      };
-  
-      const rent = await getPredictedRent(transformedInput);
-      setPredictedRent(rent);
+    const fetchInsights = async () => {
+      const address = property.location.address.line;
+      if (!address) return;
+      const insights = await getFullRentInsights(address);
+      setRentInsights(insights);
     };
-  
-    fetchPredictedRent();
+    fetchInsights();
   }, [property]);
 
   useEffect(() => {
@@ -223,24 +180,67 @@ const PropertyInfo = () => {
     fetchRawCsvData();
   }, [property]);
 
+  const convertToCommonFormat = (mlsProperty) => {
+    if (!mlsProperty) return null;
+  
+    const formatted = {
+      line: mlsProperty.ADDRESS,
+      list_price: mlsProperty.LIST_PRICE,
+      location: {
+        address: {
+          line: mlsProperty.ADDRESS,
+          city: mlsProperty.TOWN,
+          state_code: mlsProperty.STATE,
+          postal_code: mlsProperty.ZIP_CODE?.toString()
+        }
+      },
+      description: mlsProperty.REMARKS,
+      property_type: mlsProperty.STYLE_SF || 'Unknown',
+      year_built: mlsProperty.YEAR_BUILT,
+      beds: mlsProperty.NO_BEDROOMS,
+      baths: mlsProperty.TOTAL_BATHS,
+      building_size: {
+        size: mlsProperty.SQUARE_FEET,
+        units: 'SQUARE FEET'
+      },
+      lot_size: {
+        size: mlsProperty.ACRE,
+        units: 'acres'
+      },
+      raw_data: mlsProperty
+    };
+  
+    return formatted;
+  };
+
   useEffect(() => {
     const fetchMLSData = async () => {
-      if (!property?.location?.address?.line) return;
+      const address = property?.location?.address?.line;
+      if (!address) return;
       
       try {
-        const results = await searchMLSProperties(property.location.address.line, {
+        const results = await searchMLSProperties(address, {
           directSearch: true
         });
         
         if (results && results.length > 0) {
+          const matched = results[0];
+          console.log('🎯 Matched CSV Entry from ADDRESS:', matched);
+      // setMlsData(matched);
           setMlsData(results[0]);
           // Convert the raw property object to CSV format
           const csvLine = Object.values(results[0].raw_data).join(',');
           setRawCsvData(csvLine);
+        } else {
+          console.warn('nO mls MATCH FOUND FOR ADDRESS:',address)
         }
+     
+
       } catch (error) {
         console.error('Error fetching MLS data:', error);
       }
+      
+      
     };
 
     fetchMLSData();
@@ -269,6 +269,7 @@ const PropertyInfo = () => {
         })
         .catch(() => setPredictionError('Prediction unavailable'))
         .finally(() => setPredictionLoading(false));
+
     } else {
       setMlsPredictedPrice(null);
       setPredictionError(null);
@@ -329,18 +330,6 @@ const PropertyInfo = () => {
     lat: property?.address?.lat || property?.location?.address?.coordinate?.lat || 37.7749,
     lng: property?.address?.long || property?.location?.address?.coordinate?.lon || -122.4194
   };
-
-  function generateSuccessCurve(predictedRent) {
-    if (!predictedRent) return [];
-    const base = predictedRent;
-    const data = [];
-    for (let offset = -0.2; offset <= 0.2; offset += 0.02) {
-      const rent = base * (1 + offset);
-      const likelihood = Math.exp(-5 * Math.pow(offset, 2));
-      data.push({ rent, likelihood });
-    }
-    return data;
-  }
 
   return (
     <Box sx={{ bgcolor: '#faf9f8', minHeight: '100vh' }}>
@@ -501,7 +490,6 @@ const PropertyInfo = () => {
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Price Prediction
               </Typography>
-
               <Paper elevation={3} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9' }}>
                 <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mb: 3 }}>
                   <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -512,7 +500,6 @@ const PropertyInfo = () => {
                       ${(property?.list_price || 0).toLocaleString()}
                     </Typography>
                   </Box>
-
                   <Box sx={{ flex: 1, minWidth: 200 }}>
                     <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                       Predicted Sale Price
@@ -616,111 +603,15 @@ const PropertyInfo = () => {
 
               {/* Predicted & Optimal Rent Cards */}
               <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', my: 3 }}>
-                <Paper elevation={3} sx={{ p: 3, borderRadius: 3, flex: 1, minWidth: 200 }}>
+                <Paper elevation={3} sx={{ p: 3, borderRadius: 3, flex: 1, minWidth: 200, maxWidth: 500 }}>
                   <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     Predicted Monthly Rent
                   </Typography>
                   <Typography variant="h4" fontWeight="bold" color="primary">
-                    ${predictions?.predictedRent?.toLocaleString() || 'Calculating...'}/mo
-                  </Typography>
-                </Paper>
-
-                <Paper elevation={3} sx={{ p: 3, borderRadius: 3, flex: 1, minWidth: 200 }}>
-                  <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-                    Suggested Optimal Rent
-                  </Typography>
-                  <Typography variant="h4" fontWeight="bold" color="success.main">
-                    ${Math.round(predictions?.predictedRent * 0.95).toLocaleString() || 'Calculating...'}/mo
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Recommended for faster rental and higher occupancy
+                    {rentInsights?.predicted_rent ? `$${rentInsights.predicted_rent.toLocaleString()}/mo` : 'Calculating...'}
                   </Typography>
                 </Paper>
               </Box>
-
-              {/* Success Likelihood Curve */}
-              <Box sx={{ height: 300, mt: 4 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={(() => {
-                    if (!predictions?.predictedRent) return [];
-                    
-                    const baseRent = predictions.predictedRent;
-                    const optimalRent = Math.round(baseRent * 0.95);
-                    const minRent = Math.round(baseRent * 0.7);  // 70% of predicted
-                    const maxRent = Math.round(baseRent * 1.3);  // 130% of predicted
-                    const step = Math.round((maxRent - minRent) / 30); // 30 points on the curve
-                    
-                    const data = [];
-                    for (let rent = minRent; rent <= maxRent; rent += step) {
-                      // Calculate likelihood - peaks at optimal rent
-                      const distanceFromOptimal = Math.abs(rent - optimalRent) / baseRent;
-                      const likelihood = Math.exp(-8 * Math.pow(distanceFromOptimal, 2));
-                      data.push({ 
-                        rent,
-                        likelihood,
-                        isOptimal: rent === optimalRent
-                      });
-                    }
-                    
-                    // Ensure optimal point is included
-                    if (!data.find(d => d.rent === optimalRent)) {
-                      data.push({
-                        rent: optimalRent,
-                        likelihood: 1,
-                        isOptimal: true
-                      });
-                      // Sort to maintain curve smoothness
-                      data.sort((a, b) => a.rent - b.rent);
-                    }
-                    
-                    return data;
-                  })()}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                    <XAxis 
-                      dataKey="rent" 
-                      tickFormatter={(value) => `$${value.toLocaleString()}`}
-                      label={{ value: 'Monthly Rent ($)', position: 'insideBottom', dy: 10 }} 
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
-                      domain={[0, 1]}
-                    />
-                    <ChartTooltip 
-                      formatter={(value, name, props) => [
-                        `${(value * 100).toFixed(0)}%`,
-                        'Success Likelihood'
-                      ]}
-                      labelFormatter={(label) => `$${label.toLocaleString()}/mo`}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="likelihood"
-                      stroke="#228B22"
-                      strokeWidth={3}
-                      dot={(props) => {
-                        if (props.payload.isOptimal) {
-                          return (
-                            <circle
-                              cx={props.cx}
-                              cy={props.cy}
-                              r={6}
-                              fill="#228B22"
-                              stroke="#fff"
-                              strokeWidth={2}
-                            />
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-                The curve shows rental success likelihood at different price points. 
-                The green dot indicates the suggested optimal rent for maximum occupancy.
-              </Typography>
             </Box>
 
             {/* Rent Optimization Explanation */}
@@ -759,15 +650,12 @@ const PropertyInfo = () => {
                 </Typography>
 
                 <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', color: '#555' }}>
-                  <li><strong>📍 Location:</strong> {property?.location?.address?.city || "City Unknown"}, {property?.location?.address?.state_code || "State Unknown"}</li>
-                  <li><strong>📐 Square Footage:</strong> {property?.description?.sqft ? `${property.description.sqft} sqft` : "Not available"}</li>
-                  <li><strong>🛏️ Bedrooms:</strong> {property?.description?.beds || "N/A"} beds</li>
-                  <li><strong>🛁 Bathrooms:</strong> {property?.description?.baths || "N/A"} baths</li>
-                  <li><strong>🏠 Property Type:</strong> {property?.prop_type || "N/A"}</li>
-                  <li><strong>🚗 Parking:</strong> {property?.parking?.spaces ? `${property.parking.spaces} spaces` : "No dedicated parking"}</li>
-                  <li><strong>📄 Rental Terms:</strong> Annual Lease</li>
+                <li><strong>Median Rent in Area:</strong> {rentInsights?.optimal_rent?.median_rent ? `$${rentInsights?.optimal_rent?.median_rent.toFixed(2)}/mo` : 'Calculating...'}</li>
+                 <li><strong> Difference from Median:</strong> ${rentInsights?.optimal_rent?.difference} </li>
+                  <li><strong> Likelihood of Renting:</strong> {rentInsights?.optimal_rent?.likelihood}</li>
+                  <li><strong>Based on {rentInsights?.num_comps} local comps. </strong></li>
+                  <li><strong>Suggestion: {rentInsights?.optimal_rent?.suggestion}</strong></li>
                 </ul>
-
                 <Typography variant="body2" color="text.secondary">
                   📈 Based on these factors and local market trends, the rent is optimized to increase the chances of a successful rental within the competitive market.
                 </Typography>
@@ -780,14 +668,12 @@ const PropertyInfo = () => {
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Risk Assessment
               </Typography>
-
               {/* Risk Level Chip */}
               <Chip
                 label={`${riskLevel} Risk`}
                 color={riskColor}
                 sx={{ fontSize: '1rem', mb: 2, p: 2 }}
               />
-
               {/* Risk Message */}
               <Typography variant="body1" color="text.secondary">
                 {riskMessage[riskLevel]}
@@ -798,9 +684,9 @@ const PropertyInfo = () => {
             <Box sx={{ mb: 6 }}>
               <Typography variant="h5" fontWeight="bold">Adjustable Rental Income</Typography>
               <Slider
-                value={adjustedRent}
-                min={baseRent * 0.5}
-                max={Math.ceil(baseRent * 1.5)}
+                value={rentInsights?.predicted_rent}
+                min={rentInsights?.predicted_rent * -0.5}
+                max={Math.ceil(rentInsights?.predicted_rent * 1.5)}
                 step={50}
                 onChange={(_, val) => setAdjustedRent(val)}
                 valueLabelDisplay="auto"
@@ -850,13 +736,13 @@ const PropertyInfo = () => {
               {/* Price Labels */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 1, mb: 1 }}>
                 <Typography variant="caption" color="text.secondary">
-                  ${Math.round(baseRent * 0.8)} (Below Market)
+                  ${Math.round(rentInsights?.predicted_rent * 0.8)} (Below Market)
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  ${adjustedRent} (Your Price)
+                  ${rentInsights?.predicted_rent} (Your Price)
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  ${Math.round(baseRent * 1.2)} (Above Market)
+                  ${Math.round(rentInsights?.predicted_rent * 1.2)} (Above Market)
                 </Typography>
               </Box>
             </Box>
