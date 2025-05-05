@@ -1,17 +1,15 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import tensorflow as tf
 import pandas as pd
-import sys
-import logging
+from predict import predict_price
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Load TF model for price prediction
+# Load model
 MODEL_PATH = "./experiments/model-1"
 model = tf.keras.models.load_model(MODEL_PATH)
 
-# Define required feature order
+# feature columns in training order
 feature_columns = [
     'NO_BEDROOMS', 'NO_FULL_BATHS', 'NO_HALF_BATHS', 'TOTAL_BATHS',
     'SQUARE_FEET', 'AboveGradeFinishedArea', 'SQUARE_FEET_INCL_BASE',
@@ -28,99 +26,64 @@ feature_columns = [
     'COUNTY_Windham', 'COUNTY_Worcester', 'COUNTY_York'
 ]
 
-# Preprocessing function
-def preprocess_single_input(raw_df):
-    '''
-    Transforms a raw 1-row DataFrame into the format expected by the trained model.
-    
-    - Converts "Yes"/"No" strings to binary (1/0)
-    - Applies one-hot encoding to categorical features: PROP_TYPE and COUNTY
-    - Ensures that all expected columns are present and ordered
-    - Fills in missing columns with zeros
 
-    Returns:
-        A single-row DataFrame with features in the correct order and format.
-    '''
-    
+def preprocess_single_input(raw_df):
+    """
+    Preprocess a raw 1-row DataFrame into a model-ready input row.
+    """
+    # Convert Yes/No to 1/0
     raw_df["SQUARE_FEET_INCL_BASE"] = raw_df["SQUARE_FEET_INCL_BASE"].map({"Yes": 1, "No": 0}).astype(int)
     raw_df["BASEMENT"] = raw_df["BASEMENT"].map({"Yes": 1, "No": 0}).astype(int)
+
+    # One-hot encode categorical variables
     raw_df = pd.get_dummies(raw_df, columns=["PROP_TYPE", "COUNTY"], dtype=int)
 
+    # Add missing columns and ensure order
     for col in feature_columns:
         if col not in raw_df.columns:
             raw_df[col] = 0
-    return raw_df[feature_columns].astype(float)
+    raw_df = raw_df[feature_columns]
+
+    return raw_df.astype(float)
 
 
+@app.route("/", methods=['GET'])
+def home():
+    return render_template('index.html')
 
-def generate_description(raw_input_df):
-    '''
-    Creates a brief summary of the property.
-    The summary includes:
-    - Bedroom/bathroom count
-    - Square footage
-    - Year built
-    - Basement and fireplace status
-    - County name
-    '''
-    beds = int(raw_input_df['NO_BEDROOMS'].iloc[0])
-    baths = float(raw_input_df['TOTAL_BATHS'].iloc[0])
-    sqft = int(raw_input_df['SQUARE_FEET'].iloc[0])
-    year_built = int(raw_input_df['YEAR_BUILT'].iloc[0])
-    basement = raw_input_df['BASEMENT'].iloc[0]
-    fireplace = int(raw_input_df['FIRE_PLACES'].iloc[0])
-    county = raw_input_df.get('COUNTY', pd.Series(["Unknown"])).iloc[0]
 
-    desc = [
-        f"The property is a {beds}-bedroom, {baths}-bath home with {sqft} sq ft of living space.",
-        f"It was built in {year_built} and {'has' if basement == 'Yes' else 'does not have'} a basement."
-    ]
-    if fireplace > 0:
-        desc.append(f"It features {fireplace} fireplace{'s' if fireplace > 1 else ''}.")
-    desc.append(f"Located in {county} County.")
+@app.route("/", methods=['POST'])
+def predict():
+    if 'inputvector' not in request.files:
+        return "No file part"
 
-    return " ".join(desc)
+    file = request.files['inputvector']
+    if file.filename == '':
+        return "No selected file"
 
-# Flask route
-@app.route("/", methods=["GET", "POST"])
-def index():
+    try:
+        raw_df = pd.read_csv(file)
+        if raw_df.shape[0] != 1:
+            return "Expected a single input vector (1 row)."
 
-    '''
-    Handles the main route for GET and POST requests.
-    
-    - On GET: renders the empty form
-    - On POST: processes the uploaded CSV, performs prediction, and generates feedback
-    
-    Returns:
-        - predicted_price: formatted string with currency
-        - description: human-readable property summary
-    '''
-    
-    predicted_price = None
-    description = None
+        X_input = preprocess_single_input(raw_df)
+        prediction = model.predict(X_input)[0][0]
 
-    if request.method == "POST":
-        if 'inputvector' not in request.files:
-            predicted_price = "No file part."
-        else:
-            file = request.files['inputvector']
-            if file.filename == '':
-                predicted_price = "No selected file."
-            else:
-                try:
-                    raw_df = pd.read_csv(file)
-                    if raw_df.shape[0] != 1:
-                        predicted_price = "Please upload a CSV with exactly 1 row."
-                    else:
-                        X_input = preprocess_single_input(raw_df)
-                        prediction = model.predict(X_input)[0][0]
-                        predicted_price = f"${prediction:,.2f}"
-                        description = generate_description(raw_df)
-                except Exception as e:
-                    predicted_price = f"An error occurred: {str(e)}"
+        return f"<h2 class='text-center mt-5'>Predicted Property Price: ${prediction:,.2f}</h2>"
 
-    return render_template("index.html", predicted_price=predicted_price,
-                        description=description)
+    except Exception as e:
+        return f"<h3 style='color:red'>An error occurred: {str(e)}</h3>"
 
-if __name__ == "__main__":
+
+@app.route('/api/predict', methods=['POST'])
+def api_predict():
+    try:
+        property_data = request.json
+        prediction = predict_price(property_data)
+        return jsonify({'prediction': prediction})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+if __name__ == '__main__':
     app.run(port=3000, debug=True)
