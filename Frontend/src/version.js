@@ -456,7 +456,7 @@ export const versionDetails = {
 // Export both versions separately
 export const VERSIONS = {
   working: '1.0.11',
-  edit: '16',
+  edit: 18,
   history: versionDetails,
   changelog: {
     '1.0.11': 'Hide raw MLS data button when dev mode is disabled',

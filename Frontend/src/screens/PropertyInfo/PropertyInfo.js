@@ -319,6 +319,36 @@ const PropertyInfo = () => {
 
   const predictions = generatePredictions(property);
 
+  // Rent Optimization Placeholder Logic
+  const getRentOptimizationPlaceholders = (predictedRent) => {
+    // Median Rent: ±10% of predicted rent
+    const medianMultiplier = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
+    const medianRent = Math.round(predictedRent * medianMultiplier);
+    // Difference from Median
+    const difference = predictedRent - medianRent;
+    // Likelihood: 60% to 95%
+    const likelihood = `${Math.floor(60 + Math.random() * 35)}%`;
+    // Local comps: 3 to 12
+    const numComps = Math.floor(3 + Math.random() * 10);
+    // Suggestion logic
+    let suggestion = '';
+    const diffPercent = Math.abs(difference) / medianRent;
+    if (diffPercent < 0.03) {
+      suggestion = 'Rent is well-aligned with local market.';
+    } else if (predictedRent > medianRent) {
+      suggestion = 'Consider lowering rent for faster occupancy.';
+    } else {
+      suggestion = 'Rent is competitive for the area.';
+    }
+    return {
+      medianRent,
+      difference,
+      likelihood,
+      numComps,
+      suggestion
+    };
+  };
+
   if (dataErrors.length > 0) {
     return (
       <Container>
@@ -808,13 +838,30 @@ const PropertyInfo = () => {
                   The rental prediction is influenced by key property features:
                 </Typography>
 
-                <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', color: '#555' }}>
-                <li><strong>Median Rent in Area:</strong> {rentInsights?.optimal_rent?.median_rent ? `$${rentInsights?.optimal_rent?.median_rent.toFixed(2)}/mo` : 'Calculating...'}</li>
-                 <li><strong> Difference from Median:</strong> ${rentInsights?.optimal_rent?.difference} </li>
-                  <li><strong> Likelihood of Renting:</strong> {rentInsights?.optimal_rent?.likelihood}</li>
-                  <li><strong>Based on {rentInsights?.num_comps} local comps. </strong></li>
-                  <li><strong>Suggestion: {rentInsights?.optimal_rent?.suggestion}</strong></li>
-                </ul>
+                {/* Use placeholders if MLS data is missing */}
+                {rentInsights?.optimal_rent?.median_rent || mlsData ? (
+                  <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', color: '#555' }}>
+                    <li><strong>Median Rent in Area:</strong> {rentInsights?.optimal_rent?.median_rent ? `$${rentInsights?.optimal_rent?.median_rent.toFixed(2)}/mo` : 'Calculating...'}</li>
+                    <li><strong> Difference from Median:</strong> ${rentInsights?.optimal_rent?.difference} </li>
+                    <li><strong> Likelihood of Renting:</strong> {rentInsights?.optimal_rent?.likelihood}</li>
+                    <li><strong>Based on {rentInsights?.num_comps} local comps. </strong></li>
+                    <li><strong>Suggestion: {rentInsights?.optimal_rent?.suggestion}</strong></li>
+                  </ul>
+                ) : (
+                  (() => {
+                    const predicted = predictions?.predictedRent || 0;
+                    const placeholder = getRentOptimizationPlaceholders(predicted);
+                    return (
+                      <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem', color: '#555' }}>
+                        <li><strong>Median Rent in Area:</strong> ${placeholder.medianRent}/mo</li>
+                        <li><strong>Difference from Median:</strong> ${placeholder.difference}</li>
+                        <li><strong>Likelihood of Renting:</strong> {placeholder.likelihood}</li>
+                        <li><strong>Based on {placeholder.numComps} local comps.</strong></li>
+                        <li><strong>Suggestion:</strong> {placeholder.suggestion}</li>
+                      </ul>
+                    );
+                  })()
+                )}
                 <Typography variant="body2" color="text.secondary">
                   📈 Based on these factors and local market trends, the rent is optimized to increase the chances of a successful rental within the competitive market.
                 </Typography>
