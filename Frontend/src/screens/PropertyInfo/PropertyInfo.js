@@ -119,6 +119,13 @@ const PropertyInfo = () => {
     High: 'This property shows a high investment risk. Carefully review before investing.'
   };
 
+  const [position, setPosition] = useState(50); // 50% is center
+  const [isDragging, setIsDragging] = useState(false);
+  const [baseRent, setBaseRent] = useState(
+    property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045)
+  );
+  const percentageDiff = Math.round(((adjustedRent / baseRent) - 1) * 100);
+
   const handleCopyToClipboard = (text, label) => {
     navigator.clipboard.writeText(JSON.stringify(text, null, 2))
       .then(() => {
@@ -330,7 +337,6 @@ const PropertyInfo = () => {
     );
   }
 
-  const baseRent = property?.rental_estimate || Math.round((property?.estimate?.estimate || 300000) * 0.0045);
   const priceTrendData = generatePriceTrendData(property);
 
   const nearbyProperties = allProperties.filter(
@@ -362,6 +368,70 @@ const PropertyInfo = () => {
   const coordinates = {
     lat: property?.address?.lat || property?.location?.address?.coordinate?.lat || 37.7749,
     lng: property?.address?.long || property?.location?.address?.coordinate?.lon || -122.4194
+  };
+
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    updatePosition(e);
+  };
+
+  const handleDragMove = (e) => {
+    if (isDragging) {
+      updatePosition(e);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const updatePosition = (e) => {
+    const bar = e.currentTarget;
+    const rect = bar.getBoundingClientRect();
+    // Only use the x coordinate, ignore y position
+    const x = e.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    const boundedPercentage = Math.min(Math.max(percentage, 0), 100);
+    setPosition(boundedPercentage);
+    
+    // Calculate new rent based on position
+    const factor = 0.8 + (boundedPercentage / 100) * 0.4; // 0.8 to 1.2
+    setAdjustedRent(Math.round(baseRent * factor));
+  };
+
+  // Add touch support
+  const handleTouchStart = (e) => {
+    setIsDragging(true);
+    updateTouchPosition(e);
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDragging) {
+      updateTouchPosition(e);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const updateTouchPosition = (e) => {
+    const bar = e.currentTarget;
+    const rect = bar.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = Math.min(Math.max(touch.clientX, rect.left), rect.right);
+    const percentage = ((x - rect.left) / rect.width) * 100;
+    const boundedPercentage = Math.min(Math.max(percentage, 0), 100);
+    setPosition(boundedPercentage);
+    
+    // Calculate new rent based on position
+    const factor = 0.8 + (boundedPercentage / 100) * 0.4; // 0.8 to 1.2
+    setAdjustedRent(Math.round(baseRent * factor));
+  };
+
+  const handleReset = () => {
+    setPosition(50);
+    setAdjustedRent(baseRent);
   };
 
   return (
@@ -715,31 +785,16 @@ const PropertyInfo = () => {
               </Typography>
             </Box>
 
-            {/* Adjustable Rent */}
-            <Box sx={{ mb: 6 }}>
-              <Typography variant="h5" fontWeight="bold">Adjustable Rental Income</Typography>
-              <Slider
-                value={rentInsights?.predicted_rent}
-                min={rentInsights?.predicted_rent * -0.5}
-                max={Math.ceil(rentInsights?.predicted_rent * 1.5)}
-                step={50}
-                onChange={(_, val) => setAdjustedRent(val)}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(val) => `$${val}`}
-                sx={{ maxWidth: 500, color: '#c82021' }}
-              />
-            </Box>
-
             {/* Market Positioning */}
             <Box sx={{ mb: 6 }}>
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Market Positioning
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                See where your adjusted rent stands in comparison to estimated market rates
+                Drag the circle to see how different rental rates compare to market rates
               </Typography>
 
-              {/* Dynamic Bar */}
+              {/* Gradient Bar with Draggable Circle */}
               <Box
                 sx={{
                   position: 'relative',
@@ -747,10 +802,14 @@ const PropertyInfo = () => {
                   borderRadius: 5,
                   background: 'linear-gradient(to right, #c8e6c9, #fff59d, #ffcdd2)',
                   mb: 2,
-                  mt: 3
+                  mt: 3,
+                  cursor: 'pointer'
                 }}
+                onMouseDown={handleDragStart}
+                onMouseMove={handleDragMove}
+                onMouseUp={handleDragEnd}
+                onMouseLeave={handleDragEnd}
               >
-                {/* Marker for your price */}
                 <Box
                   sx={{
                     position: 'absolute',
@@ -762,24 +821,50 @@ const PropertyInfo = () => {
                     backgroundColor: '#c82021',
                     border: '3px solid white',
                     boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                    left: `${Math.min(100, Math.max(0, ((adjustedRent - baseRent) / baseRent) * 50 + 50))}%`,
-                    transition: 'left 0.3s ease'
+                    left: `${position}%`,
+                    transition: isDragging ? 'none' : 'left 0.1s ease',
+                    cursor: isDragging ? 'grabbing' : 'grab'
                   }}
                 />
               </Box>
 
-              {/* Price Labels */}
+              {/* Price Labels and Percentage Display */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 1, mb: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  ${Math.round(rentInsights?.predicted_rent * 0.8)} (Below Market)
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  ${rentInsights?.predicted_rent} (Your Price)
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  ${Math.round(rentInsights?.predicted_rent * 1.2)} (Above Market)
-                </Typography>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                    ${Math.round(baseRent * 0.8)}
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    (-20%)
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
+                    ${Math.round(adjustedRent)}
+                  </Typography>
+                  <Typography variant="subtitle1" color={percentageDiff >= 0 ? 'success.main' : 'error.main'} sx={{ fontWeight: 'bold' }}>
+                    {percentageDiff >= 0 ? '+' : ''}{percentageDiff}%
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                    ${Math.round(baseRent * 1.2)}
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    (+20%)
+                  </Typography>
+                </Box>
               </Box>
+
+              {/* Reset Button */}
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={handleReset}
+                sx={{ mt: 2 }}
+              >
+                Reset to Predicted Rate
+              </Button>
             </Box>
 
             {/* Map Section */}

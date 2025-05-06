@@ -2,10 +2,57 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 12;
+export const EDIT_VERSION = 16;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.17': {
+    title: 'Market Positioning Drag Behavior Fix',
+    details: [
+      'Fixed drag behavior to follow horizontal position regardless of vertical mouse movement',
+      'Simplified position calculation logic',
+      'Improved user experience for rate adjustment'
+    ],
+    date: '2024-04-12',
+    time: '15:45 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.16': {
+    title: 'Market Positioning Interaction Enhancement',
+    details: [
+      'Constrained drag movement to horizontal direction only',
+      'Added touch support for mobile devices',
+      'Improved drag precision and boundary handling',
+      'Prevented default touch actions for better control'
+    ],
+    date: '2024-04-12',
+    time: '15:30 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.15': {
+    title: 'Market Positioning UI Enhancement',
+    details: [
+      'Increased visibility of rental rate numbers',
+      'Added color coding for percentage differences',
+      'Improved typography hierarchy for better readability',
+      'Enhanced visual feedback for market rate comparison'
+    ],
+    date: '2024-04-12',
+    time: '15:15 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.14': {
+    title: 'Market Positioning Enhancement',
+    details: [
+      'Removed adjustable rental income slider',
+      'Added draggable circle to market positioning bar',
+      'Added percentage display for market rate comparison',
+      'Added reset button to return to predicted rate'
+    ],
+    date: '2024-04-12',
+    time: '15:00 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
   'v1.1.13': {
     title: 'Rental Prediction Fallback Enhancement',
     details: [
