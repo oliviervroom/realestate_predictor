@@ -2,7 +2,7 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 8;
+export const EDIT_VERSION = 9;
 
 // Version details for changelog
 export const versionDetails = {
@@ -155,6 +155,16 @@ export const versionDetails = {
     date: '2025-04-12', 
     time: '11:15 EDT',
     commit: 'https://github.com/oliviervroom/realestate_predictor/commit/25c70b2'
+  },
+  'v1.1.10': {
+    title: 'Search Navigation Enhancement',
+    details: [
+      'Modified search behavior to navigate to neighborhood level instead of specific address',
+      'Improved user experience for address searches'
+    ],
+    date: '2024-04-12',
+    time: '14:00 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
   }
 };
 
@@ -290,6 +300,14 @@ export const CHANGELOG = [
     changes: [
       'Hide raw MLS data button and dialog when dev mode is disabled',
       'Wrapped MLS data section with DevModeWrapper component'
+    ]
+  },
+  {
+    version: '1.1.10',
+    date: '2024-04-12',
+    changes: [
+      'Modified search behavior to navigate to neighborhood level instead of specific address',
+      'Improved user experience for address searches'
     ]
   }
 ]; 

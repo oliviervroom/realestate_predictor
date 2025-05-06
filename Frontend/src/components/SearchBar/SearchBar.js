@@ -102,11 +102,10 @@ const SearchBar = ({ onDataSourceChange, dataSource: externalDataSource }) => {
 
     // Parse location data and navigate
     if (value.line && value.city && value.state_code) {
-      // Full address - this should take precedence
-      const formattedAddress = value.line.toLowerCase().replace(/[,\s]+/g, '-');
+      // Full address - navigate to neighborhood level
       const formattedCity = value.city.toLowerCase().replace(/\s+/g, '-');
       const formattedState = value.state_code.toLowerCase();
-      navigate(`/${formattedState}/${formattedCity}/${formattedAddress}`);
+      navigate(`/${formattedState}/${formattedCity}`);
     } else if (value.postal_code) {
       navigate(`/zip/${value.postal_code}`);
     } else if (value.city && value.state_code) {
