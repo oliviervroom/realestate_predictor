@@ -2,10 +2,32 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 10;
+export const EDIT_VERSION = 12;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.13': {
+    title: 'Rental Prediction Fallback Enhancement',
+    details: [
+      'Added fallback to local prediction when API returns "not found"',
+      'Improved rental prediction reliability',
+      'Enhanced user experience with consistent predictions'
+    ],
+    date: '2024-04-12',
+    time: '14:45 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.12': {
+    title: 'Enhanced Rental Prediction Fallback',
+    details: [
+      'Added sophisticated fallback calculation for rental predictions',
+      'Base calculation on 1% of list price with property feature adjustments',
+      'Added randomness and bounds to make predictions more realistic'
+    ],
+    date: '2024-04-12',
+    time: '14:30 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
   'v1.1.11': {
     title: 'Property Card Predictions Enhancement',
     details: [

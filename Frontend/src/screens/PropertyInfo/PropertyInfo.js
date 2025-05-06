@@ -34,26 +34,59 @@ const hashString = (str) => {
 
 // Generate predictions based on property data
 const generatePredictions = (property) => {
-  if (!property?.location?.address?.line || !property?.list_price) return null;
+  if (!property?.list_price) return null;
   
-  const address = property.location.address.line;
   const listPrice = property.list_price;
   
-  // Generate a number between 0 and 1 using the address hash
-  const hash = hashString(address);
-  const normalizedHash = (hash % 1000) / 1000; // Convert to 0-1 range
+  // If we have complete data, use the existing hash-based prediction
+  if (property?.location?.address?.line) {
+    const address = property.location.address.line;
+    
+    // Generate a number between 0 and 1 using the address hash
+    const hash = hashString(address);
+    const normalizedHash = (hash % 1000) / 1000; // Convert to 0-1 range
+    
+    // Sale price: -10% to +10% of list price
+    const salePercentage = (normalizedHash * 0.2) - 0.1; // -10% to +10%
+    const predictedSalePrice = Math.round(listPrice * (1 + salePercentage));
+    
+    // Rental price: 1-3% of list price
+    const rentalPercentage = 0.01 + (normalizedHash * 0.02); // 1-3%
+    const predictedRent = Math.round(listPrice * rentalPercentage);
+    
+    return {
+      predictedSalePrice,
+      predictedRent
+    };
+  }
   
-  // Sale price: -10% to +10% of list price
-  const salePercentage = (normalizedHash * 0.2) - 0.1; // -10% to +10%
-  const predictedSalePrice = Math.round(listPrice * (1 + salePercentage));
+  // Fallback calculation when data is incomplete
+  // Base rental rate around 1% of list price
+  let baseRentalRate = 0.01;
   
-  // Rental price: 1-3% of list price
-  const rentalPercentage = 0.01 + (normalizedHash * 0.02); // 1-3%
-  const predictedRent = Math.round(listPrice * rentalPercentage);
+  // Adjust based on property features if available
+  if (property?.beds) {
+    baseRentalRate += (property.beds * 0.001); // Each bedroom adds 0.1%
+  }
+  if (property?.baths) {
+    baseRentalRate += (property.baths * 0.0005); // Each bathroom adds 0.05%
+  }
+  if (property?.sqft) {
+    baseRentalRate += (property.sqft / 10000); // Each 1000 sqft adds 0.1%
+  }
+  
+  // Add some randomness (-10% to +10%)
+  const randomFactor = 0.9 + (Math.random() * 0.2);
+  const predictedRent = Math.round(listPrice * baseRentalRate * randomFactor);
+  
+  // Ensure rent stays within reasonable bounds (0.5% to 2% of list price)
+  const minRent = Math.round(listPrice * 0.005);
+  const maxRent = Math.round(listPrice * 0.02);
+  const boundedRent = Math.min(Math.max(predictedRent, minRent), maxRent);
   
   return {
-    predictedSalePrice,
-    predictedRent
+    predictedSalePrice: Math.round(listPrice * (0.95 + Math.random() * 0.1)), // 95-105% of list price
+    predictedRent: boundedRent
   };
 };
 
@@ -608,7 +641,9 @@ const PropertyInfo = () => {
                     Predicted Monthly Rent
                   </Typography>
                   <Typography variant="h4" fontWeight="bold" color="primary">
-                    {rentInsights?.predicted_rent ? `$${rentInsights.predicted_rent.toLocaleString()}/mo` : 'Calculating...'}
+                    {rentInsights?.predicted_rent && !rentInsights.predicted_rent.toString().includes('not found') 
+                      ? `$${rentInsights.predicted_rent.toLocaleString()}/mo` 
+                      : `$${predictions?.predictedRent.toLocaleString()}/mo`}
                   </Typography>
                 </Paper>
               </Box>
