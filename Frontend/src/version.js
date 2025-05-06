@@ -2,7 +2,7 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 33;
+export const EDIT_VERSION = 34;
 
 // Version details for changelog
 export const versionDetails = {
@@ -439,6 +439,17 @@ export const versionDetails = {
     date: '2024-04-12',
     time: '19:45 EDT',
     commit: 'https://github.com/yourusername/realestate_predictor/commit/price-trend-fluctuation-devmode'
+  },
+  'v1.1.35': {
+    title: 'About This Home MLS Remarks',
+    details: [
+      'Populated About this home section with MLS remarks (REMARKS column from sold_data.csv) if available',
+      'Fallback to property description or default message if not available',
+      'Improved property detail accuracy and user experience'
+    ],
+    date: '2024-04-12',
+    time: '20:00 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/about-this-home-mls-remarks'
   }
 };
 

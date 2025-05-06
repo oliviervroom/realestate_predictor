@@ -612,9 +612,11 @@ const PropertyInfo = () => {
             <Box sx={{ mb: 6 }}>
               <Typography variant="h5" fontWeight="bold" gutterBottom>About this home</Typography>
               <Typography variant="body1" color="text.secondary">
-                {typeof property?.description === 'string' 
-                  ? property.description 
-                  : "Details about this property are currently unavailable."}
+                {mlsData?.raw_data?.REMARKS
+                  ? mlsData.raw_data.REMARKS
+                  : (typeof property?.description === 'string' 
+                      ? property.description 
+                      : "Details about this property are currently unavailable.")}
               </Typography>
             </Box>
 
