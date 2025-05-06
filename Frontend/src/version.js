@@ -2,10 +2,20 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 9;
+export const EDIT_VERSION = 10;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.11': {
+    title: 'Property Card Predictions Enhancement',
+    details: [
+      'Made property predictions (sale and rent) only visible in dev mode',
+      'Improved user experience by hiding development features in production'
+    ],
+    date: '2024-04-12',
+    time: '14:15 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
   'v1.1.9': {
     title: 'Homepage Text and Search Improvements',
     details: [

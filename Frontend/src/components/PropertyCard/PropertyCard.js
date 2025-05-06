@@ -10,6 +10,7 @@ import {
   Skeleton
 } from '@mui/material';
 import { LocationOn, Bed, Bathtub, SquareFoot, TrendingUp, MonetizationOn } from '@mui/icons-material';
+import DevModeWrapper from '../DevToggle/DevModeWrapper';
 
 const DEFAULT_IMAGE = '/default-property.png';
 
@@ -182,20 +183,22 @@ const PropertyCard = ({ property }) => {
         </Box>
 
         {predictions && (
-          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TrendingUp sx={{ color: predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main' }} />
-              <Typography variant="body2" color={predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
-                Predicted Sale: ${predictions.predictedSalePrice.toLocaleString()}
-              </Typography>
+          <DevModeWrapper>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TrendingUp sx={{ color: predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main' }} />
+                <Typography variant="body2" color={predictions.predictedSalePrice > (property?.list_price || 0) ? 'success.main' : 'error.main'}>
+                  Predicted Sale: ${predictions.predictedSalePrice.toLocaleString()}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <MonetizationOn sx={{ color: 'primary.main' }} />
+                <Typography variant="body2" color="primary.main">
+                  Predicted Rent: ${predictions.predictedRent.toLocaleString()}/mo
+                </Typography>
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <MonetizationOn sx={{ color: 'primary.main' }} />
-              <Typography variant="body2" color="primary.main">
-                Predicted Rent: ${predictions.predictedRent.toLocaleString()}/mo
-              </Typography>
-            </Box>
-          </Box>
+          </DevModeWrapper>
         )}
       </CardContent>
     </Card>
