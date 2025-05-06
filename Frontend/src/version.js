@@ -2,10 +2,44 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 16;
+export const EDIT_VERSION = 26;
 
 // Version details for changelog
 export const versionDetails = {
+  'v1.1.20': {
+    title: 'Price Filter Debug Enhancement',
+    details: [
+      'Added detailed logging for price filtering process',
+      'Added property-level price check logging',
+      'Added summary statistics for filtered results',
+      'Improved debugging capabilities for filter issues'
+    ],
+    date: '2024-04-12',
+    time: '16:15 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.19': {
+    title: 'Local Filter Enhancement',
+    details: [
+      'Added local filtering for price, beds, baths, and square footage',
+      'Implemented fallback filtering when API filtering fails',
+      'Improved filter reliability and consistency'
+    ],
+    date: '2024-04-12',
+    time: '16:00 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.18': {
+    title: 'Price Filter Fix',
+    details: [
+      'Fixed price filter not being properly included in API requests',
+      'Modified request data structure to include filters at root level',
+      'Improved filter handling for beds, baths, and square footage'
+    ],
+    date: '2024-04-12',
+    time: '15:50 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
   'v1.1.17': {
     title: 'Market Positioning Drag Behavior Fix',
     details: [
@@ -244,6 +278,85 @@ export const versionDetails = {
     date: '2024-04-12',
     time: '14:00 EDT',
     commit: 'https://github.com/oliviervroom/realestate_predictor/commit/2f2b075'
+  },
+  'v1.1.21': {
+    title: 'Price Filter Fix',
+    details: [
+      'Fixed price filter value handling',
+      'Added proper number validation and bounds checking',
+      'Improved price range validation',
+      'Fixed race condition in price updates'
+    ],
+    date: '2024-04-12',
+    time: '16:30 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/price-filter-fix'
+  },
+  'v1.1.22': {
+    title: 'API Price Filter Format Fix',
+    details: [
+      'Fixed list_price filter format to match API specification',
+      'Properly structured min/max values in API request',
+      'Improved API filter reliability'
+    ],
+    date: '2024-04-12',
+    time: '16:45 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/api-price-filter-fix'
+  },
+  'v1.1.23': {
+    title: 'Local Filter Logic Fix',
+    details: [
+      'Fixed local filter checks to properly validate min/max values',
+      'Improved filter condition checks for price, beds, baths, and sqft',
+      'Enhanced filter reliability by checking actual filter values'
+    ],
+    date: '2024-04-12',
+    time: '17:00 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/local-filter-fix'
+  },
+  'v1.1.24': {
+    title: 'Price Sorting Feature',
+    details: [
+      'Added ability to sort properties by price',
+      'Implemented ascending and descending price sorting',
+      'Added sort parameter to API request'
+    ],
+    date: '2024-04-12',
+    time: '17:15 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/price-sorting'
+  },
+  'v1.1.25': {
+    title: 'Price Sort Toggle UI',
+    details: [
+      'Added SortToggle component for price sorting',
+      'Implemented ascending/descending price sort buttons',
+      'Added sort state management in Properties screen',
+      'Integrated sort toggle with existing filter UI'
+    ],
+    date: '2024-04-12',
+    time: '17:30 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/sort-toggle-ui'
+  },
+  'v1.1.26': {
+    title: 'Duplicate Property Fix',
+    details: [
+      'Fixed React key warning by removing duplicate properties',
+      'Added property_id uniqueness check',
+      'Improved property list rendering reliability'
+    ],
+    date: '2024-04-12',
+    time: '17:45 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/duplicate-property-fix'
+  },
+  'v1.1.27': {
+    title: 'Sort Toggle Text Update',
+    details: [
+      'Updated sort toggle button text to be more concise',
+      'Added dollar sign to price sort indicators',
+      'Improved sort direction clarity'
+    ],
+    date: '2024-04-12',
+    time: '18:00 EDT',
+    commit: 'https://github.com/oliviervroom/realestate_predictor/commit/sort-toggle-text'
   }
 };
 

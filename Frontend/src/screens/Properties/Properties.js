@@ -30,6 +30,7 @@ import PropertyCard from '../../components/PropertyCard/PropertyCard';
 import BedBathToggle from '../../components/BedBathToggle/BedBathToggle';
 import PriceToggle from '../../components/PriceToggle/PriceToggle';
 import SquareFootageToggle from '../../components/SquareFootageToggle/SquareFootageToggle';
+import SortToggle from '../../components/SortToggle/SortToggle';
 import { searchProperties } from '../../services/realtyApi';
 import { searchMLSProperties } from '../../services/mlsApi';
 import { WORKING_VERSION, EDIT_VERSION } from '../../version';
@@ -98,6 +99,7 @@ const Properties = () => {
   const [beds, setBeds] = useState(null);
   const [baths, setBaths] = useState(null);
   const [sqft, setSqft] = useState(null);
+  const [sort, setSort] = useState(null);
 
   // Format location parameters
   const stateCode = state?.toUpperCase();
@@ -164,7 +166,10 @@ const Properties = () => {
       try {
         const filters = buildFilters(stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft);
         const searchFunction = dataSource === 'realtyApi' ? searchProperties : searchMLSProperties;
-        const result = await searchFunction(filters);
+        const result = await searchFunction({
+          ...filters,
+          sort
+        });
         
         if (result.success) {
           setProperties(result.processedData || []);
@@ -182,7 +187,7 @@ const Properties = () => {
     };
 
     fetchPropertyData();
-  }, [stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft, dataSource]);
+  }, [stateCode, cityName, formattedAddress, postalCode, price, beds, baths, sqft, dataSource, sort]);
 
   // Render property cards
   const renderProperties = () => (
@@ -241,6 +246,12 @@ const Properties = () => {
             <SquareFootageToggle
               value={sqft}
               onChange={setSqft}
+            />
+            <SortToggle
+              value={sort}
+              onChange={(value) => {
+                setSort(value);
+              }}
             />
           </Box>
 

@@ -148,14 +148,27 @@ export const searchProperties = async (params) => {
       data: params
     });
 
-// Construct the request data
+    // Construct the request data
     const requestData = {
       limit: 42,
       offset: 0,
       postal_code: params.postal_code,
       state_code: params.state_code,
       city: params.city,
-      ...params
+      // Format list_price according to API spec
+      list_price: params.list_price ? {
+        min: params.list_price.min,
+        max: params.list_price.max
+      } : undefined,
+      // Include other filters
+      beds: params.beds,
+      baths: params.baths,
+      sqft: params.sqft,
+      // Add sorting if specified
+      sort: params.sort ? {
+        field: 'list_price',
+        direction: params.sort
+      } : undefined
     };
 
     debugSteps.push({
@@ -185,17 +198,99 @@ export const searchProperties = async (params) => {
 
     const processedData = response.data?.data?.home_search?.results || [];
 
+    // Remove duplicate properties based on property_id
+    const uniqueProperties = processedData.reduce((acc, property) => {
+      if (!acc.some(p => p.property_id === property.property_id)) {
+        acc.push(property);
+      }
+      return acc;
+    }, []);
+
+    // Add debug logging for price filtering
+    debugSteps.push({
+      step: 'Price Filter Debug',
+      data: {
+        filterParams: params.list_price,
+        samplePrices: uniqueProperties.slice(0, 5).map(p => ({
+          property_id: p.property_id,
+          price: p.list_price,
+          address: p.location?.address?.line
+        }))
+      }
+    });
+
+    // Apply local filtering
+    const filteredData = uniqueProperties.filter(property => {
+      // Price filter with detailed logging
+      if (params.list_price?.min || params.list_price?.max) {
+        const price = property.list_price;
+        const min = params.list_price.min;
+        const max = params.list_price.max;
+        
+        // Log each property's price check
+        debugSteps.push({
+          step: 'Price Check',
+          data: {
+            property_id: property.property_id,
+            price: price,
+            min: min,
+            max: max,
+            passes: !(min && price < min) && !(max && price > max)
+          }
+        });
+
+        if (min && price < min) return false;
+        if (max && price > max) return false;
+      }
+
+      // Beds filter
+      if (params.beds?.min || params.beds?.max) {
+        const beds = property.description?.beds;
+        if (params.beds.min && beds < params.beds.min) return false;
+        if (params.beds.max && beds > params.beds.max) return false;
+      }
+
+      // Baths filter
+      if (params.baths?.min || params.baths?.max) {
+        const baths = property.description?.baths;
+        if (params.baths.min && baths < params.baths.min) return false;
+        if (params.baths.max && baths > params.baths.max) return false;
+      }
+
+      // Square footage filter
+      if (params.sqft?.min || params.sqft?.max) {
+        const sqft = property.description?.sqft;
+        if (params.sqft.min && sqft < params.sqft.min) return false;
+        if (params.sqft.max && sqft > params.sqft.max) return false;
+      }
+
+      return true;
+    });
+
+    // Log final filtered results
+    debugSteps.push({
+      step: 'Filtered Results',
+      data: {
+        totalBefore: processedData.length,
+        totalAfter: filteredData.length,
+        priceRange: {
+          min: Math.min(...filteredData.map(p => p.list_price)),
+          max: Math.max(...filteredData.map(p => p.list_price))
+        }
+      }
+    });
+
     debugSteps.push({
       step: 'Processed Data',
       data: {
-        count: processedData.length,
-        sample: processedData.slice(0, 2) // Show first 2 items as sample
+        count: filteredData.length,
+        sample: filteredData.slice(0, 2) // Show first 2 items as sample
       }
     });
 
     return {
       success: true,
-      processedData,
+      processedData: filteredData,
       debugSteps,
       requestData,
       responseData: response.data,

@@ -48,7 +48,17 @@ function PriceToggle({ value, onChange }) {
     if (inputValues.min === '' && inputValues.max === '') {
       onChange(null);
     } else {
-      onChange(tempValue);
+      // Ensure we have valid numbers
+      const min = inputValues.min ? Number(inputValues.min) : MIN_PRICE;
+      const max = inputValues.max ? Number(inputValues.max) : undefined;
+      
+      // Validate the range
+      if (max && min > max) {
+        // If min is greater than max, swap them
+        onChange({ min: max, max: min });
+      } else {
+        onChange({ min, max });
+      }
     }
     handleClose();
   };
@@ -61,26 +71,34 @@ function PriceToggle({ value, onChange }) {
   };
 
   const handleSliderChange = (event, newValue) => {
-    // Only update max value if it's different from min value
-    const max = newValue[1] === newValue[0] ? undefined : newValue[1];
-    setTempValue({ min: newValue[0], max });
+    // Ensure values are numbers and within bounds
+    const min = Math.max(MIN_PRICE, Math.min(MAX_PRICE, newValue[0]));
+    const max = newValue[1] === newValue[0] ? undefined : Math.max(MIN_PRICE, Math.min(MAX_PRICE, newValue[1]));
+    
+    // Update both temp value and input values
+    setTempValue({ min, max });
     setInputValues({
-      min: newValue[0].toString(),
+      min: min.toString(),
       max: max?.toString() || ''
     });
   };
 
   const handleInputChange = (type) => (event) => {
-    const newValue = event.target.value === '' ? '' : Number(event.target.value.replace(/[^0-9]/g, ''));
+    const rawValue = event.target.value.replace(/[^0-9]/g, '');
+    const newValue = rawValue === '' ? '' : Number(rawValue);
+    
+    // Update input value
     setInputValues(prev => ({
       ...prev,
-      [type]: newValue
+      [type]: rawValue
     }));
 
+    // Update temp value if we have a valid number
     if (newValue !== '') {
+      const boundedValue = Math.max(MIN_PRICE, Math.min(MAX_PRICE, newValue));
       setTempValue(prev => ({
         ...prev,
-        [type]: Number(newValue)
+        [type]: boundedValue
       }));
     }
   };
