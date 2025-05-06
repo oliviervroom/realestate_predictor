@@ -2,7 +2,7 @@
 export const WORKING_VERSION = "1.0.8";
 
 // Edit version - increments with each edit, resets when working version updates
-export const EDIT_VERSION = 26;
+export const EDIT_VERSION = 33;
 
 // Version details for changelog
 export const versionDetails = {
@@ -357,6 +357,88 @@ export const versionDetails = {
     date: '2024-04-12',
     time: '18:00 EDT',
     commit: 'https://github.com/oliviervroom/realestate_predictor/commit/sort-toggle-text'
+  },
+  'v1.1.28': {
+    title: 'Price Trend Data Enhancement',
+    details: [
+      'Modified price trend data to only show when 2+ real data points are available',
+      'Added date-based sorting for price trend data points',
+      'Improved accuracy by using actual dates from API response',
+      'Removed estimated/projected data points'
+    ],
+    date: '2024-04-12',
+    time: '18:15 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/price-trend-enhancement'
+  },
+  'v1.1.29': {
+    title: 'Price Trend Data Update',
+    details: [
+      'Removed estimate from price trend data',
+      'Added predicted price to price trend visualization',
+      'Improved accuracy of price trend display'
+    ],
+    date: '2024-04-12',
+    time: '18:30 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/price-trend-update'
+  },
+  'v1.1.30': {
+    title: 'Price Trend Data Threshold Update',
+    details: [
+      'Increased minimum data points required for price trend display to 3',
+      'Improved trend visualization accuracy',
+      'Ensures more reliable price trend patterns'
+    ],
+    date: '2024-04-12',
+    time: '18:45 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/price-trend-threshold'
+  },
+  'v1.1.31': {
+    title: 'Price Trend Generation Enhancement',
+    details: [
+      'Added realistic price trend generation when MLS data is unavailable',
+      'Implemented historical appreciation rate calculation',
+      'Added intermediate data points for smooth trend visualization',
+      'Improved prediction accuracy with conservative estimates'
+    ],
+    date: '2024-04-12',
+    time: '19:00 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/price-trend-generation'
+  },
+  'v1.1.32': {
+    title: '10-Year Price Trend Enhancement',
+    details: [
+      'Extended price trend visualization to show 10 years of data',
+      'Added historical price calculations for years before last sale',
+      'Improved trend accuracy with forward and backward calculations',
+      'Enhanced visualization of long-term property value changes'
+    ],
+    date: '2024-04-12',
+    time: '19:15 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/10-year-trend'
+  },
+  'v1.1.33': {
+    title: '10-Year Price Trend Realism Update',
+    details: [
+      'Improved starting value for 10-year price trend by projecting backward from last sold or list price',
+      'Used 3% annual appreciation rate for interpolation',
+      'Ensured smooth, realistic trend from 10 years ago to present',
+      'Eliminated unrealistic high starting values'
+    ],
+    date: '2024-04-12',
+    time: '19:30 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/10-year-trend-realism'
+  },
+  'v1.1.34': {
+    title: 'Price Trend Fluctuation & Dev Mode Display',
+    details: [
+      'Added realistic year-to-year fluctuations to 10-year price trend',
+      'Wrapped Price Estimate Trend section in DevModeWrapper',
+      'Price trend now only displays in dev mode',
+      'Ensured final year uses predicted price if available'
+    ],
+    date: '2024-04-12',
+    time: '19:45 EDT',
+    commit: 'https://github.com/yourusername/realestate_predictor/commit/price-trend-fluctuation-devmode'
   }
 };
 

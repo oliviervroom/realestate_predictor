@@ -50,8 +50,8 @@ const generatePredictions = (property) => {
     const salePercentage = (normalizedHash * 0.2) - 0.1; // -10% to +10%
     const predictedSalePrice = Math.round(listPrice * (1 + salePercentage));
     
-    // Rental price: 1-3% of list price
-    const rentalPercentage = 0.01 + (normalizedHash * 0.02); // 1-3%
+    // Rental price: 1% of list price
+    const rentalPercentage = 0.01 + (normalizedHash * 0.002); // 1%
     const predictedRent = Math.round(listPrice * rentalPercentage);
     
     return {
@@ -346,17 +346,67 @@ const PropertyInfo = () => {
 
   function generatePriceTrendData(property) {
     try {
-      const soldPrice = property?.last_sold_price;
-      const estimate = property?.estimate?.estimate;
-      const listPrice = property?.list_price;
-      if (soldPrice && estimate && listPrice) {
-        return [
-          { date: '2020', value: soldPrice * 0.95 },
-          { date: '2021', value: soldPrice },
-          { date: '2022', value: estimate },
-          { date: '2023', value: estimate * 1.03 },
-          { date: '2024', value: listPrice }
-        ];
+      const realDataPoints = [];
+      const currentYear = new Date().getFullYear();
+      const yearsToShow = 10;
+      const startYear = currentYear - yearsToShow + 1;
+      let appreciationRate = 0.03; // Default to 3% annual appreciation
+      let startValue;
+      let anchorYear;
+      let anchorValue;
+
+      // Use last sold price as anchor if available and within last 10 years
+      if (property?.last_sold_price && property?.last_sold_date) {
+        anchorYear = new Date(property.last_sold_date).getFullYear();
+        anchorValue = property.last_sold_price;
+        if (anchorYear > startYear) {
+          const yearsBack = anchorYear - startYear;
+          startValue = anchorValue / Math.pow(1 + appreciationRate, yearsBack);
+        } else {
+          startValue = anchorValue;
+        }
+      } else if (property?.list_price) {
+        anchorYear = currentYear;
+        anchorValue = property.list_price;
+        startValue = anchorValue / Math.pow(1 + appreciationRate, yearsToShow - 1);
+      } else {
+        startValue = 300000;
+        anchorYear = currentYear;
+        anchorValue = 300000 * Math.pow(1 + appreciationRate, yearsToShow - 1);
+      }
+
+      // Generate values for each year with fluctuation
+      for (let i = 0; i < yearsToShow; i++) {
+        const year = startYear + i;
+        let value;
+        if (year === anchorYear) {
+          value = anchorValue;
+        } else if (year < anchorYear) {
+          value = startValue * Math.pow(1 + appreciationRate, year - startYear);
+        } else {
+          value = anchorValue * Math.pow(1 + appreciationRate, year - anchorYear);
+        }
+        // Add fluctuation except for the final year (current year)
+        if (year !== currentYear) {
+          const fluctuation = 1 + (Math.random() * 0.07 - 0.035); // ±3.5%
+          value = Math.round(value * fluctuation);
+        } else {
+          value = Math.round(value);
+        }
+        realDataPoints.push({
+          date: year.toString(),
+          value: value
+        });
+      }
+
+      // For the current year, use the predicted price if available
+      if (mlsPredictedPrice) {
+        realDataPoints[realDataPoints.length - 1].value = mlsPredictedPrice;
+      }
+
+      if (realDataPoints.length >= 3) {
+        realDataPoints.sort((a, b) => parseInt(a.date) - parseInt(b.date));
+        return realDataPoints;
       }
       return [];
     } catch (error) {
@@ -569,24 +619,26 @@ const PropertyInfo = () => {
             </Box>
 
             {/* Price Graph */}
-            <Box sx={{ mb: 6 }}>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>Price Estimate Trend</Typography>
-              {priceTrendData.length ? (
-                <Box sx={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={priceTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                      <XAxis dataKey="date" />
-                      <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                      <ChartTooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Price']} />
-                      <Line type="monotone" dataKey="value" stroke="#c82021" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              ) : (
-                <Typography>No trend data available.</Typography>
-              )}
-            </Box>
+            <DevModeWrapper>
+              <Box sx={{ mb: 6 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>Price Estimate Trend</Typography>
+                {priceTrendData.length ? (
+                  <Box sx={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={priceTrendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                        <XAxis dataKey="date" />
+                        <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                        <ChartTooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Price']} />
+                        <Line type="monotone" dataKey="value" stroke="#c82021" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </Box>
+                ) : (
+                  <Typography>No trend data available.</Typography>
+                )}
+              </Box>
+            </DevModeWrapper>
 
             {/* Price Prediction Section */}
             <Box sx={{ mb: 6 }}>
