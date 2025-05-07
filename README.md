@@ -264,6 +264,7 @@ Now the rental prediction model should be up and running.
 
 5. Run the Flask app:
 `python3 app.py`
+<br/>
 Now the sale price prediction model should be up and running.
 
 # Start front-end
@@ -271,7 +272,7 @@ Now the sale price prediction model should be up and running.
 > install it beforehand if you haven't already.
 Make sure you have gitignore and the env file. 
 
-To get get the front-end up and running, you'll first need to install the dependencies with:
+To get the front-end up and running, you'll first need to install the dependencies with:
 
 ```
 > Make a new terminal!
@@ -280,7 +281,7 @@ cd realestate_predictor/Frontend
 npm install --legacy-peer-deps
 npm start
 ```
-Enjoy!
+Now everything should be set up and running in your browser. Enjoy!
 
    
 
