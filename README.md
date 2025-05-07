@@ -11,7 +11,10 @@ The initial structure and code for the front-end was generated using bolt.new. T
 
 **🧠 Overview: A Modular AI-Powered Platform for Real Estate Evaluation**
 
-We designed and implemented a modular, AI-driven platform to help real estate investors **assess, price, and evaluate property listings** with greater intelligence and automation. The system is built around four core components:
+We designed and implemented a modular, AI-driven platform to help real estate investors **assess, price, and evaluate property listings** with greater intelligence and automation. For a brief (2 minute) demo/explanation of how to use it, you can watch: [tinyurl.com/IREIA-demo](https://tinyurl.com/IREIA-demo).
+
+
+The system is built around four core components:
 
 1. **$ Price Prediction**
 2. **📈 Rent Prediction & Optimization**
@@ -194,6 +197,7 @@ It is designed for transparency, explainability, and flexibility—allowing prop
 
 
 ## Set up guide
+For a brief (4 minute) video explanation, you can watch: [tinyurl.com/IREIA-setup](https://tinyurl.com/IREIA-setup)
 
 1. Clone the repo:
 `git clone https://github.com/oliviervroom/realestate_predictor.git`
