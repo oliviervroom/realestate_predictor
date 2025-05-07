@@ -1,13 +1,23 @@
-## Overview
+## Description
 This is the public repo version of our project, for CS682. See bottom of ReadME for set-up guide.
 
 
 # Attributions
 The initial structure and code for the front-end was generated using bolt.new. Then, changes were made to it accordingly using the cursor IDE and manual coding. 
 
-**Authors 
-<br/>Kattayun Ensafitakaldani**, **Olivier Vroom**, **Inal Mashukov**, **Bhavana Manneni**
+**Authors: Kattayun Ensafitakaldani**, **Olivier Vroom**, **Inal Mashukov**, **Bhavana Manneni** <br/>
 **May 7<sup>th</sup>, 2025**
+
+# Table of Contents
+- Overview
+- Backend:
+  - Price Prediction
+  - Rent Prediction & Optimization
+  - Risk & Fraud Assessment
+  - Renovation Opportunity Detection
+- Front-end Explanation
+- Setup Guide
+
 
 **🧠 Overview: A Modular AI-Powered Platform for Real Estate Evaluation**
 
@@ -25,7 +35,37 @@ Together, these modules enable users to make **data-informed investment decision
 
 
 1. **$ Price Prediction**
-   Predicts the price of a property using the property features. For detailed explanation, see the readMe in /Backend/inal-cs682.
+   Predicts the price of a property using the property features.
+   Note: individual programs have documentation within the programs themselves.
+
+- `inal-cs682` is the root directory of the price prediction feature and the root directory to which all relative paths refer.
+
+- `config/config.json` is the file containing the configuration parameters for the model (hyperparameters) and the training process.
+
+- `data/` directory contains the X (`features.csv`) and the target Y (`targets.csv`) files, which come from Olivier's data cleaned using 
+`miscellaneous/data-cleaning.py`
+
+- `evaluate.py` picks a feature vector of a property (see the script), and makes a prediction based on it, (while also comparing the prediction to the actual observed value corresponding to the feature vector if it comes from the dataset). `evaluate.py` takes a command line input argument `--indexprop your_value` which makes a prediction on the test data property at index `your_value`. The script essentially contains the functionality of `app.py`, and is meant for demonstration purposes. Sample cli input `python3 evaluate.py --indexprop 11` - will return prediction for testing set property at index `11`. Similarly, `python3 evaluate.py --indexprop 3` will return the prediction for test set feature vector at index `3`.
+
+  - NOTE: `evaluate.py` is meant for demonstration purposes, its functionality is integrated into `app.py`. Same goes for `data-cleaning.py`, which is meant to be used for reference if needed, and was only applied on the original training data.
+
+- `experiments/` directory contains some of the saved training results, although the model saved as model-1 performs best, so the remaining ones can be (and have been) disposed of. The training logs can be found in the corresponding log files.
+
+- `app.py` is the Flask-based app for web-based deployment of the model.
+
+- `templates/index.html` is the webpage used to interface with the model via `app.py`.
+
+- `src/models/model.py` contains the model itself, it is an MLP written in Tensorflow, please see source code for details and extensive documentation
+
+- `src/utils/data_loader.py` loads the data into the model
+
+- `train.py` is the training script
+- `predict.py` contains functionality to make a price prediction for an individual property.
+
+- `requirements.txt` has all of the required tools and package versions
+
+- `preprocess.py` contains functions that transform raw API data and make it compatible with the model - property features are extracted, encoded, etc. Note that the functionality of `preprocess.py` is integrated into `app.py`, whereas the former was simply the original program containing that functionality.
+
 
 **📈 2. Rent Prediction & Optimization**
 
@@ -130,36 +170,21 @@ This modular pipeline brings together machine learning, rules-based logic, and n
 
 It is designed for transparency, explainability, and flexibility—allowing property investors to filter, evaluate, and decide with confidence.
 
-# How Front-end and Back-end (price prediction) work
-
+## How Front-end works
+For a brief (2 minute) demo/explanation of how to use it, you can watch: [tinyurl.com/IREIA-demo](https://tinyurl.com/IREIA-demo).
 - **Frontend (React):**
   - Users search for properties and view details in the browser.
   - When a price prediction is needed, the frontend sends the property data to the backend using an API call to `/api/predict`.
   - When a rent prediction is needed, the frontend sends the address to the backend using an API call to `api/rent-insights/${address}`;
   - The frontend displays property info and the corresponding predicted price, predicted rent, loading states, and any errors.
 
-- **Backend for the price prediction (Flask):**
-  - Receives property data from the frontend at the `/api/predict` endpoints.
-  - Preprocesses the data to match the model's expected format.
-  - Loads a trained TensorFlow model and uses it to predict the property price.
-  - Returns the predicted price as a JSON response.
-
-- **How it works together:**
+- **How it works together with the backend:**
   1. User interacts with the React app (e.g., views a property).
   2. The React app sends property data to the Flask backend for prediction.
   3. Flask preprocesses the data, runs the model, and returns the prediction.
   4. The React app displays the result to the user.
 
-# Property Data and MLS Prediction Logic
 
-- **Property details** are found using the Realty API, which provides general property information for search and display.
-- **MLS Data Limitation:** The machine learning models were trained using MLS (Multiple Listing Service) data, which is proprietary and expensive to access. Therefore, only properties present in the local MLS dataset can be used for true sale price predictions. 
-- **Prediction Logic:**
-  - If a property is found in the local MLS dataset, the backend can make a real sale price prediction using the trained model.
-  - If the property is not in the MLS dataset, the app displays a placeholder prediction instead.
-- This approach ensures that only properties with available MLS data receive accurate AI-driven sale price predictions, while all other properties show estimated or placeholder values.
-
-## File Structure
 ## Frontend File Structure
 
 ### Core Files
@@ -194,6 +219,15 @@ It is designed for transparency, explainability, and flexibility—allowing prop
 ### Configuration
 - `package.json`: Project dependencies and scripts
 - `start-dev.sh`: Development server startup script
+
+  # Property Data and MLS Prediction Logic
+
+- **Property details** are found using the Realty API, which provides general property information for search and display.
+- **MLS Data Limitation:** The machine learning models were trained using MLS (Multiple Listing Service) data, which is proprietary and expensive to access. Therefore, only properties present in the local MLS dataset can be used for true sale price predictions. 
+- **Prediction Logic:**
+  - If a property is found in the local MLS dataset, the backend can make a real sale price prediction using the trained model.
+  - If the property is not in the MLS dataset, the app displays a placeholder prediction instead.
+- This approach ensures that only properties with available MLS data receive accurate AI-driven sale price predictions, while all other properties show estimated or placeholder values.
 
 
 ## Set up guide
@@ -235,7 +269,7 @@ python3 app.py
 > install it beforehand if you haven't already.
 Make sure you have gitignore and the env file. 
 
-To get started with your project, you'll first need to install the dependencies with:
+To get get the front-end up and running, you'll first need to install the dependencies with:
 
 ```
 > Make a new terminal!
