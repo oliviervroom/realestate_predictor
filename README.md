@@ -14,7 +14,7 @@ This application provides a user interface for real estate investors to find inv
 `git clone https://github.com/oliviervroom/realestate_predictor.git`
 
 # Start back-end first
-# Rental prediction back-end
+## Rental prediction back-end
 ### 1. Install dependencies
 
 ```bash
@@ -26,7 +26,7 @@ pip3 install flask_cors
 python3 app.py
 ```
 
-# Optional (for sale prediction)
+## Sale prediction model
 1. Change directory: `cd realestate_predictor/Backend/inal-cs682`
 
 2. Create a virtual environment (recommended, using conda):
@@ -53,9 +53,8 @@ To get started with your project, you'll first need to install the dependencies 
 cd realestate_predictor/Frontend
 
 npm install --legacy-peer-deps
+npm start
 ```
-
-then npm start
 
 #How it works
 
@@ -79,21 +78,47 @@ then npm start
 # Property Data and MLS Prediction Logic
 
 - **Property details** are found using the Realty API, which provides general property information for search and display.
-- **MLS Data Limitation:** The machine learning models were trained using MLS (Multiple Listing Service) data, which is proprietary and expensive to access. Only properties present in the local MLS dataset can be used for true sale price predictions.
+- **MLS Data Limitation:** The machine learning models were trained using MLS (Multiple Listing Service) data, which is proprietary and expensive to access. Only properties present in the local MLS dataset can be used for true sale price predictions. 
 - **Prediction Logic:**
   - If a property is found in the local MLS dataset, the backend can make a real sale price prediction using the trained model.
   - If the property is not in the MLS dataset, the app displays a placeholder prediction instead.
 - This approach ensures that only properties with available MLS data receive accurate AI-driven sale price predictions, while all other properties show estimated or placeholder values.
 
 ## File Structure
-Overview:
-Frontend/index.js: First JS file that runs when application starts, calls App.js
-App.js: controls routing (e.g. /MA/Boston/Ashmont-250) and imports components
-   Home.JS: Lets users search for a property using State, City, ZIP code, or address
-      SearchBar
+## Frontend File Structure
 
+### Core Files
+- `src/index.js`: Entry point of the React application, renders the root App component
+- `src/App.js`: Main application component that handles routing and layout structure
+  - Routes include: Home (/), Properties (/zip/:postal_code, /:state, /:state/:city), PropertyInfo (/:state/:city/:address, /property/:id), PropertyListings, Changelog, and MLSSearch
 
-Frontend/PropertyInfo.js: Shows detailed info about a specific property 
+### Screens
+- `screens/Home/`: Landing page component with property search functionality
+- `screens/Properties/`: Displays property listings based on location (state, city, or zip code)
+- `screens/PropertyInfo/`: Detailed view of a specific property
+- `screens/propertyListings/`: Shows a list of all available properties
+- `screens/MLSSearch.js`: MLS (Multiple Listing Service) search interface
+- `screens/Frame/`: Layout wrapper component for consistent page structure
+
+### Components
+- `components/Changelog/`: Displays application version history and updates
+- `components/DevToggle/`: Development mode toggle with context provider
+  - Includes DevContext for managing development features
+
+### Supporting Files
+- `theme.js`: Material-UI theme configuration
+- `version.js`: Version tracking and management
+- `services/`: API and backend service integrations
+- `styles/`: Global styling and CSS modules
+- `constants/`: Application-wide constants and configuration
+- `data/`: Static data and mock data for development
+
+### Public Assets
+- `public/`: Static assets, images, and public files
+
+### Configuration
+- `package.json`: Project dependencies and scripts
+- `start-dev.sh`: Development server startup script
 
    
 
