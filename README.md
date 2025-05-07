@@ -218,7 +218,7 @@ For a brief (2 minute) demo/explanation of how to use it, you can watch: [tinyur
 
 ### Configuration
 - `package.json`: Project dependencies and scripts
-- `start-dev.sh`: Development server startup script
+
 
   # Property Data and MLS Prediction Logic
 
