@@ -248,6 +248,7 @@ pip3 install pandas flask catboost scikit-learn
 pip3 install flask_cors
 python3 app.py
 ```
+Now the rental prediction model should be up and running.
 
 ## Sale prediction model
 1. Change directory: `cd realestate_predictor/Backend/inal-cs682`
@@ -263,6 +264,7 @@ python3 app.py
 
 5. Run the Flask app:
 `python3 app.py`
+Now the sale price prediction model should be up and running.
 
 # Start front-end
 > The following steps require [NodeJS](https://nodejs.org/en/) to be installed on your system, so please
