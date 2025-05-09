@@ -67,7 +67,7 @@ Together, these modules enable users to make **data-informed investment decision
 - `preprocess.py` contains functions that transform raw API data and make it compatible with the model - property features are extracted, encoded, etc. Note that the functionality of `preprocess.py` is integrated into `app.py`, whereas the former was simply the original program containing that functionality.
 
 
-**📈 2. Rent Prediction & Optimization**
+## **📈 2. Rent Prediction & Optimization**
 
 **🧮 Rent Prediction**
 
@@ -81,7 +81,7 @@ We use **CatBoost**, a high-performance gradient boosting algorithm optimized fo
 
 The model is trained on historical rental data and generalizes well to unseen listings.
 
-**🎯 3. Rent Optimization**
+## **🎯 3. Rent Optimization**
 
 After predicting rent, we refine it by comparing the property with **similar nearby listings** using a similarity filter based on:
 
@@ -98,7 +98,7 @@ We then apply **Kernel Density Estimation (KDE)** on the comparable rents to mod
 
 **Key Principle:** Similar properties in the same area should yield similar rent. KDE enables investors to choose price points strategically based on market probability.
 
-**🚩 4. Risk & Fraud Assessment**
+## **🚩 4. Risk & Fraud Assessment**
 
 Our risk analysis module is designed to flag both **visible and hidden risk indicators** across financial, legal, structural, and data integrity domains.
 
@@ -160,7 +160,7 @@ Many investors **actively seek** undervalued homes that need cosmetic or structu
 
 By surfacing these opportunities proactively, our platform helps investors spot hidden gems often buried in text.
 
-**✅ Final Outcome**
+## **✅ Final Outcome**
 
 This modular pipeline brings together machine learning, rules-based logic, and natural language processing to:
 
