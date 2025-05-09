@@ -34,7 +34,7 @@ The system is built around four core components:
 Together, these modules enable users to make **data-informed investment decisions** by analyzing both structured property data and unstructured listing text.
 
 
-1. **$ Price Prediction**
+## 1. **$ Price Prediction**
    Predicts the price of a property using the property features.
    Note: individual programs have documentation within the programs themselves.
 
